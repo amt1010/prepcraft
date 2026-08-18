@@ -153,13 +153,94 @@ size.
 
 ## Phase 4 — OCR + extraction
 
-- [ ] `providers/ocr/tesseract_provider.py`
-- [ ] `ocr/layout_analysis.py`
-- [ ] `questions/extraction.py`
-- [ ] Hand-transcribe `tests/fixtures/expected/main/questions.json` and
+- [x] `providers/ocr/tesseract_provider.py` (+ `claude_provider.py` fallback,
+      `ocr/orchestrator.py` confidence routing)
+- [x] `ocr/layout_analysis.py`
+- [x] `questions/extraction.py` (+ `providers/text_generation.py`)
+- [x] Hand-transcribe `tests/fixtures/expected/main/questions.json` and
       `tests/fixtures/expected/mental_maths/questions.json`
-- [ ] Wire up OCR + extraction accuracy metrics (EVALUATION.md)
-- [ ] CLI: `python -m app extract-questions <run_id>`
+- [x] Wire up OCR + extraction accuracy metrics (EVALUATION.md)
+- [x] CLI: `python -m app extract-questions <run_id>`
+
+### Golden paper verification findings (2026-08-18)
+
+Ran `extract-questions` against all 4 golden paper pages with a real
+`ANTHROPIC_API_KEY` (Tesseract for OCR, Claude Sonnet for classification).
+Measured against the hand-transcribed fixtures:
+
+| Metric | Main paper | Mental Maths |
+|---|---|---|
+| Extraction recall | 66.7% (14/21) | 100% (14/14, +8 spurious) |
+| Field accuracy — type | 85.7% | 85.7% |
+| Field accuracy — marks | 85.7% | 78.6% |
+| Field accuracy — topic | 57.1% | 21.4% |
+| Field accuracy — difficulty (exact) | 57.1% | 50% |
+| OCR character accuracy (page 1 sample) | 56.8% | — |
+
+All below EVALUATION.md's MVP bar (OCR ≥90%, extraction recall ≥90%).
+Three distinct root causes, not one bug:
+
+1. **`LayoutAnalysis`'s `^\d{1,2}\.$` regex is both too strict and too
+   loose against real OCR noise.** Too strict: Tesseract read "7." as
+   "7.." (double period) on the main paper's page 2, so question 7
+   (Competency based questions) never opened its own group and its
+   content silently merged into question 6's group, which the
+   classification prompt then ignored since it was told "this is
+   question 6." Same failure dropped question 4 on page 1. Too loose:
+   on the Mental Maths page, sentence-ending numbers like "...became
+   50." and "...digit is 4." inside question 1f's own text matched the
+   same regex and were misread as new top-level questions "50" and "4",
+   producing two fabricated garbage entries with `marks: null`. A
+   text-only regex can't tell "a question number starting a new line"
+   from "a number that happens to end a sentence" — that needs each
+   `OCRWord`'s `left`/`top` position (already captured in `OCRResult`,
+   just not used by `LayoutAnalysis` yet) to check whether the token is
+   the leftmost word on a new line near the page's margin. Not fixed
+   here — recorded as the concrete next step before this metric will
+   clear 90%.
+2. **Real photo OCR quality is moderate in cluttered regions.** 56.8%
+   character accuracy on a hand-typed page-1 reference, well under the
+   90% bar. Expected given lighting, paper fold, and faint pencil/ink
+   remnants Phase 3's cleaning didn't fully remove (see Phase 3's own
+   findings above) — this was never going to be a clean scan.
+3. **The classification LLM sometimes fabricates plausible-but-wrong
+   specifics from corrupted OCR input instead of flagging uncertainty.**
+   Mental Maths question 1e's actual text is "57 + 7 = 8 x ___"; badly
+   garbled OCR led Sonnet to return an entirely different (but
+   internally consistent) fact family, "5 + 3 = 8, 9 - 4 = ___", instead
+   of anything resembling the source. The `[0.5x9=4.5]` marks-grid
+   question (Q3) shows the opposite, better-behaved failure mode: faced
+   with an unreadable digit grid, the model correctly inferred there
+   should be 9 sub-items from the marks annotation but returned generic
+   placeholder text ("(addition problem with missing digits)") rather
+   than invented digits — i.e. it hedged on content it couldn't read
+   instead of fabricating numbers. The prompt in
+   `questions/extraction.py` has no explicit "say so if you can't read
+   part of this" instruction; adding one is a cheap follow-up.
+
+**Metric-implementation note:** `compute_word_accuracy`'s positional
+zip-based comparison (matching predicted word *i* against reference word
+*i*) desyncs badly once the two texts have a different word count —
+which is the normal case here, not the exception. It produced a 4.5%
+score on the same page-1 sample that scored 56.8% on character accuracy,
+which is not a believable gap. EVALUATION.md specifies "exact word match
+rate after tokenization" without saying how to align two differently-
+sized word lists; this needs an edit-distance/alignment-based comparison
+to be a meaningful number, not the naive zip used here.
+
+Page 3 of the main paper correctly produced 0 question groups — it only
+contains continuation letters ("b.", "c.") with no top-level number of
+its own, which `LayoutAnalysis` was never designed to handle (see this
+phase's plan, Task 9 Step 3 note). Cross-page question continuation is
+an open problem for whenever multi-page single-run ingestion lands.
+
+No comparison was possible against a topic taxonomy — "topic accuracy"
+is exact-string match against fixture labels I wrote by hand (e.g.
+"Addition" vs the model's "Missing number/Equation" for the same
+question), so a chunk of that 57%/21% gap is disagreement about label
+*wording*, not the model misunderstanding the question. A real fix needs
+either a fixed topic taxonomy the model is asked to pick from, or a
+looser-than-exact-match grading rule — not yet decided.
 
 ## Phase 5 — Structured question models
 
