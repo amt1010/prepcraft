@@ -5,7 +5,7 @@ import { checkAndConsumeQuota } from "../../../lib/quotaOrchestrator";
 import { callPipelineService } from "../../../lib/pipelineClient";
 
 export async function POST(req: Request) {
-  const { userId } = auth();
+  const { userId } = await auth();
   const body = await req.json();
   const imageUrls: string[] = body.imageUrls;
   const ip = req.headers.get("x-forwarded-for") ?? "0.0.0.0";

@@ -12,9 +12,10 @@ const EDITABLE_FIELDS = [
   "isActive",
 ] as const;
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const { userId } = auth();
-  const before = await prisma.tier.findUniqueOrThrow({ where: { id: params.id as any } });
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { userId } = await auth();
+  const before = await prisma.tier.findUniqueOrThrow({ where: { id: id as any } });
   const patch = await req.json();
 
   const data: Record<string, unknown> = {};
@@ -23,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const after = await prisma.tier.update({
-    where: { id: params.id as any },
+    where: { id: id as any },
     data: { ...data, updatedBy: userId },
   });
 
@@ -32,7 +33,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       await recordAuditLog(prisma, {
         adminUserId: userId!,
         action: "tier.update",
-        target: `${params.id}.${field}`,
+        target: `${id}.${field}`,
         oldValue: String((before as any)[field]),
         newValue: String((after as any)[field]),
       });

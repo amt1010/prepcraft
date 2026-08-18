@@ -4,9 +4,9 @@ import { isAdminSession } from "./src/lib/adminAuth";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)", "/api/admin(.*)"]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isAdminRoute(req)) {
-    const { sessionClaims } = auth();
+    const { sessionClaims } = await auth();
     if (!isAdminSession(sessionClaims as { role?: string } | null)) {
       return NextResponse.redirect(new URL("/", req.url));
     }
