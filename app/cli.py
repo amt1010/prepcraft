@@ -6,6 +6,7 @@ stage is runnable and inspectable independently, per PIPELINE.md.
 from dataclasses import asdict
 from pathlib import Path
 
+import cv2
 import typer
 
 from app.backend.core.config import load_config
@@ -13,6 +14,8 @@ from app.backend.core.ids import new_id
 from app.backend.core.secrets import Secrets
 from app.backend.ingestion.image_loader import load_pages
 from app.backend.ingestion.page_detector import detect_page
+from app.backend.ocr.layout_analysis import LayoutGroup, group_by_question_number
+from app.backend.ocr.orchestrator import extract_text_with_fallback
 from app.backend.preprocessing.annotation_detector import detect_annotations
 from app.backend.preprocessing.annotation_remover import remove_annotations
 from app.backend.preprocessing.enhancement import enhance_image
@@ -22,7 +25,11 @@ from app.backend.preprocessing.quality_gate import (
     measure_sharpness,
     measure_skew_degrees,
 )
+from app.backend.providers.ocr.claude_provider import ClaudeOCRProvider
+from app.backend.providers.ocr.tesseract_provider import TesseractOCRProvider
+from app.backend.providers.text_generation import ClaudeTextGenerationProvider
 from app.backend.providers.vision import ClaudeVisionProvider
+from app.backend.questions.extraction import extract_questions
 from app.backend.storage.artifact_store import ArtifactStore
 
 app = typer.Typer(help="AI Practice Paper Generator CLI")
@@ -116,6 +123,65 @@ def clean_paper(run_id: str, storage_root: Path = Path("data/processed")) -> Non
         )
 
     typer.echo(f"Cleaned artifacts written to {store.run_dir}")
+
+
+@app.command(name="extract-questions")
+def extract_questions_cmd(
+    run_id: str,
+    storage_root: Path = Path("data/processed"),
+    config_path: Path = Path("config.yaml"),
+) -> None:
+    """OCR each cleaned page, group text into per-question chunks, and
+    classify each chunk's type/marks/topic/difficulty."""
+    store = ArtifactStore(storage_root, run_id)
+    pages = store.list_pages()
+    if not pages:
+        typer.echo(f"No pages found for run {run_id} under {storage_root}")
+        raise typer.Exit(code=1)
+
+    cfg = load_config(config_path) if config_path.exists() else None
+    secrets = Secrets()
+
+    tesseract = TesseractOCRProvider()
+    ocr_fallback = (
+        ClaudeOCRProvider(
+            api_key=secrets.anthropic_api_key,
+            model=cfg.models.ocr_fallback if cfg else "claude-haiku-4-5",
+        )
+        if secrets.anthropic_api_key
+        else None
+    )
+    text_provider = (
+        ClaudeTextGenerationProvider(
+            api_key=secrets.anthropic_api_key,
+            model=cfg.models.question_classification if cfg else "claude-sonnet-5",
+        )
+        if secrets.anthropic_api_key
+        else None
+    )
+
+    all_groups: list[LayoutGroup] = []
+    for index in pages:
+        cleaned = store.load_image(index, "06_cleaned")
+        success, buffer = cv2.imencode(".png", cleaned)
+        if not success:
+            raise ValueError(f"failed to encode page {index} as PNG")
+        image_bytes = buffer.tobytes()
+
+        ocr_result = extract_text_with_fallback(image_bytes, tesseract, ocr_fallback)
+        store.save_json(index, "07_ocr", ocr_result.model_dump())
+
+        groups = group_by_question_number(ocr_result)
+        store.save_json(index, "08_layout", {"groups": [g.model_dump() for g in groups]})
+        all_groups.extend(groups)
+
+        typer.echo(f"[{index}] OCR: {len(ocr_result.words)} word(s), {len(groups)} question group(s)")
+
+    questions = extract_questions(all_groups, text_provider=text_provider)
+    store.save_run_json("09_questions", {"questions": [q.model_dump() for q in questions]})
+
+    typer.echo(f"Extracted {len(questions)} question(s)")
+    typer.echo(f"Artifacts written to {store.run_dir}")
 
 
 if __name__ == "__main__":

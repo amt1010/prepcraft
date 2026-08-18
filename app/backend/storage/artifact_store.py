@@ -24,6 +24,16 @@ class ArtifactStore:
         path.write_text(json.dumps(data, indent=2, default=str))
         return path
 
+    def save_run_json(self, stage_name: str, data: dict) -> Path:
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+        path = self.run_dir / f"{stage_name}.json"
+        path.write_text(json.dumps(data, indent=2, default=str))
+        return path
+
+    def load_run_json(self, stage_name: str) -> dict:
+        path = self.run_dir / f"{stage_name}.json"
+        return json.loads(path.read_text())
+
     def load_image(self, page: int, stage_name: str) -> np.ndarray:
         path = self._page_dir(page) / f"{stage_name}.png"
         pil_image = Image.open(path).convert("RGB")

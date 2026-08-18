@@ -61,3 +61,21 @@ def test_list_pages_returns_empty_list_for_a_run_that_does_not_exist(tmp_path):
     store = ArtifactStore(tmp_path, "RUN-MISSING")
 
     assert store.list_pages() == []
+
+
+def test_save_run_json_writes_to_the_run_root_not_a_page_dir(tmp_path):
+    store = ArtifactStore(tmp_path, "RUN-001")
+
+    path = store.save_run_json("09_questions", {"questions": []})
+
+    assert path == tmp_path / "RUN-001" / "09_questions.json"
+    assert json.loads(path.read_text()) == {"questions": []}
+
+
+def test_load_run_json_round_trips_a_saved_run_json(tmp_path):
+    store = ArtifactStore(tmp_path, "RUN-001")
+    store.save_run_json("09_questions", {"questions": [{"question_number": "1a"}]})
+
+    loaded = store.load_run_json("09_questions")
+
+    assert loaded == {"questions": [{"question_number": "1a"}]}
