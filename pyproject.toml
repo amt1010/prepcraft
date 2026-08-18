@@ -16,6 +16,7 @@ dependencies = [
     "typer>=0.13",
     "anthropic>=0.40",
     "pyyaml>=6.0",
+    "pymupdf>=1.24",
 ]
 
 [project.optional-dependencies]
