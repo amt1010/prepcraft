@@ -8,3 +8,8 @@ __pycache__/
 
 data/processed/
 data/generated/
+
+# Next.js SaaS shell (web/)
+web/node_modules/
+web/.next/
+web/next-env.d.ts
