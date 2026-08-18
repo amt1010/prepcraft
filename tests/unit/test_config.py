@@ -56,3 +56,27 @@ def test_load_config_defaults_quality_thresholds_when_omitted(tmp_path: Path):
 
     assert config.quality.max_skew_degrees == 20.0
     assert config.quality.min_sharpness == 100.0
+
+
+def test_load_config_reads_nested_model_routing(tmp_path: Path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        "models:\n  ocr_fallback: claude-haiku-4-5\n  question_classification: claude-opus-5\n"
+    )
+
+    config = load_config(config_file)
+
+    assert config.models.ocr_fallback == "claude-haiku-4-5"
+    assert config.models.question_classification == "claude-opus-5"
+
+
+def test_load_config_defaults_model_routing_when_omitted(tmp_path: Path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("ai_provider: openai\n")
+
+    config = load_config(config_file)
+
+    assert config.models.annotation_vision == "claude-haiku-4-5"
+    assert config.models.ocr_fallback == "claude-haiku-4-5"
+    assert config.models.question_classification == "claude-sonnet-5"
+    assert config.models.question_generation == "claude-sonnet-5"

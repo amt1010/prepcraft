@@ -1,10 +1,5 @@
 # Non-secret application settings. Loaded by app/backend/core/config.py.
 # Secrets (API keys) go in .env, never here — see .env.example.
-#
-# quality.* and models.* below are the target Phase 3/7 shape (PIPELINE.md
-# "Image quality gate", ARCHITECTURE.md "Model choice per pipeline stage").
-# AppConfig only exposes the flat fields below as of Phase 1 — extend it
-# when those phases land (see TODO.md).
 
 ai_provider: claude
 ocr_provider: tesseract

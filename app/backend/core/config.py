@@ -17,6 +17,13 @@ class QualityConfig(BaseModel):
     min_sharpness: float = 100.0
 
 
+class ModelsConfig(BaseModel):
+    annotation_vision: str = "claude-haiku-4-5"
+    ocr_fallback: str = "claude-haiku-4-5"
+    question_classification: str = "claude-sonnet-5"
+    question_generation: str = "claude-sonnet-5"
+
+
 class AppConfig(BaseModel):
     ai_provider: str = "claude"
     ai_model: str = "claude-sonnet-5"
@@ -26,6 +33,7 @@ class AppConfig(BaseModel):
     pdf_page_size: str = "A4"
     generation_max_regenerate_attempts: int = 3
     quality: QualityConfig = QualityConfig()
+    models: ModelsConfig = ModelsConfig()
 
 
 def load_config(path: Path) -> AppConfig:
