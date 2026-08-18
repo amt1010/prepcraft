@@ -1,9 +1,13 @@
 import numpy as np
+import pytest
 
 from app.backend.preprocessing.annotation_detector import (
+    apply_layout_weighting,
+    detect_annotations,
     detect_color_candidates,
     filter_by_stroke_shape,
 )
+from app.backend.providers.vision import VisionResult
 
 
 def _page_with_marks() -> np.ndarray:
@@ -58,3 +62,51 @@ def test_keeps_a_blob_shaped_component():
     filtered = filter_by_stroke_shape(mask)
 
     assert filtered[40:60, 40:60].all()
+
+
+class _FakeVisionProvider:
+    def __init__(self, label: str, confidence: float):
+        self.label = label
+        self.confidence = confidence
+        self.calls = 0
+
+    def analyze_region(self, image: bytes, prompt: str) -> VisionResult:
+        self.calls += 1
+        return VisionResult(label=self.label, confidence=self.confidence)
+
+
+def test_apply_layout_weighting_passes_candidates_through_unchanged_when_no_regions_given():
+    candidates = np.zeros((10, 10), dtype=bool)
+    candidates[3:5, 3:5] = True
+
+    result = apply_layout_weighting(candidates, layout_regions=None)
+
+    assert np.array_equal(result, candidates)
+
+
+def test_apply_layout_weighting_raises_until_phase_4_layout_analysis_exists():
+    candidates = np.zeros((10, 10), dtype=bool)
+
+    with pytest.raises(NotImplementedError):
+        apply_layout_weighting(candidates, layout_regions=[{"x": 0, "y": 0, "w": 1, "h": 1}])
+
+
+def test_detect_annotations_without_a_vision_provider_uses_heuristics_only():
+    page = _page_with_marks()
+
+    result = detect_annotations(page, vision_provider=None)
+
+    assert result.mask[105:115, 25:55].any()  # red mark still flagged
+
+
+def test_detect_annotations_calls_vision_provider_only_for_mid_sized_ambiguous_components():
+    page = np.full((200, 200, 3), 255, dtype=np.uint8)
+    page[10:20, 10:100] = (20, 20, 20)  # printed header, for calibration
+    page[100:105, 100:110] = (150, 150, 150)  # small pencil speck, ~30-50px area
+
+    fake_provider = _FakeVisionProvider(label="printed", confidence=0.7)
+
+    result = detect_annotations(page, vision_provider=fake_provider, uncertainty_band=(10, 80))
+
+    assert fake_provider.calls >= 1
+    assert not result.mask[100:105, 100:110].any()  # vision said "printed" -> not flagged
