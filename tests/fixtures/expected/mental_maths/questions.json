@@ -1,0 +1,135 @@
+{
+  "questions": [
+    {
+      "question_number": "1a",
+      "text": "What is the smallest number rounded to get the answer 30?",
+      "type": "rounding",
+      "marks": 0.5,
+      "topic": "Rounding",
+      "difficulty": 2,
+      "expected_answer": "25"
+    },
+    {
+      "question_number": "1b",
+      "text": "Which number should be added to 200 to make 600?",
+      "type": "arithmetic",
+      "marks": 0.5,
+      "topic": "Addition",
+      "difficulty": 1,
+      "expected_answer": "400"
+    },
+    {
+      "question_number": "1c",
+      "text": "600 + 700 = ___ thousands and ___ hundreds",
+      "type": "fill_in_the_blank",
+      "marks": 0.5,
+      "topic": "Place value",
+      "difficulty": 3,
+      "expected_answer": "1 thousand and 3 hundreds"
+    },
+    {
+      "question_number": "1d",
+      "text": "1299 is one less than ___.",
+      "type": "fill_in_the_blank",
+      "marks": 0.5,
+      "topic": "Predecessor and successor",
+      "difficulty": 1,
+      "expected_answer": "1300"
+    },
+    {
+      "question_number": "1e",
+      "text": "57 + 7 = 8 x ___",
+      "type": "arithmetic",
+      "marks": 0.5,
+      "topic": "Multiplication",
+      "difficulty": 2,
+      "expected_answer": "8"
+    },
+    {
+      "question_number": "1f",
+      "text": "I am a number. When you round me to the nearest 10, I became 50. My ones digit is 4. What number am I?",
+      "type": "rounding",
+      "marks": 0.5,
+      "topic": "Rounding",
+      "difficulty": 3,
+      "expected_answer": "54"
+    },
+    {
+      "question_number": "2a",
+      "text": "Which digit should you look at to find out if a number is even or odd number?",
+      "type": "multiple_choice",
+      "options": ["tens digit", "Ones digit", "Hundred digit"],
+      "marks": 0.5,
+      "topic": "Odd and even numbers",
+      "difficulty": 1,
+      "expected_answer": "Ones digit"
+    },
+    {
+      "question_number": "2b",
+      "text": "Which number is even but becomes odd when 1 is added?",
+      "type": "multiple_choice",
+      "options": ["58", "71", "83"],
+      "marks": 0.5,
+      "topic": "Odd and even numbers",
+      "difficulty": 2,
+      "expected_answer": "58"
+    },
+    {
+      "question_number": "2c",
+      "text": "Which pair has an odd sum?",
+      "type": "multiple_choice",
+      "options": ["24 + 29", "45 + 25", "24 + 12"],
+      "marks": 0.5,
+      "topic": "Odd and even numbers",
+      "difficulty": 2,
+      "expected_answer": "24 + 29"
+    },
+    {
+      "question_number": "2d",
+      "text": "Which is the greatest roman number?",
+      "type": "multiple_choice",
+      "options": ["XVII", "XIX", "XVI"],
+      "marks": 0.5,
+      "topic": "Roman numerals",
+      "difficulty": 2,
+      "expected_answer": "XIX"
+    },
+    {
+      "question_number": "2e",
+      "text": "Which roman numeral is incorrect?",
+      "type": "multiple_choice",
+      "options": ["XVI", "IIV", "XXVII"],
+      "marks": 0.5,
+      "topic": "Roman numerals",
+      "difficulty": 3,
+      "expected_answer": "IIV"
+    },
+    {
+      "question_number": "3a",
+      "text": "Fill in the missing digits: 2_5 + 48_ = 724",
+      "type": "fill_in_the_blank",
+      "marks": 1.5,
+      "topic": "Column addition",
+      "difficulty": 3,
+      "expected_answer": "235 + 489 = 724"
+    },
+    {
+      "question_number": "3b",
+      "text": "Fill in the missing digits: _73 + 7_6 = 909",
+      "type": "fill_in_the_blank",
+      "marks": 1.5,
+      "topic": "Column addition",
+      "difficulty": 3,
+      "expected_answer": "173 + 736 = 909"
+    },
+    {
+      "question_number": "3c",
+      "text": "Fill in the missing digits: 77_ + 126 = __2",
+      "type": "fill_in_the_blank",
+      "marks": 1.5,
+      "topic": "Column addition",
+      "difficulty": 4,
+      "expected_answer": "776 + 126 = 902"
+    }
+  ]
+}

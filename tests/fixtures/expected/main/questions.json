@@ -1,0 +1,197 @@
+{
+  "questions": [
+    {
+      "question_number": "1a",
+      "text": "___ + 305 = 800. What is the missing number?",
+      "type": "multiple_choice",
+      "options": ["405", "450", "500", "495"],
+      "marks": 0.5,
+      "topic": "Addition",
+      "difficulty": 2,
+      "expected_answer": "495"
+    },
+    {
+      "question_number": "1b",
+      "text": "What should be added to the sum of 445 and 225 to get the answer as the smallest four-digit number?",
+      "type": "multiple_choice",
+      "options": ["300", "450", "330", "230"],
+      "marks": 0.5,
+      "topic": "Addition",
+      "difficulty": 3,
+      "expected_answer": "330"
+    },
+    {
+      "question_number": "1c",
+      "text": "Fill in the blanks with a Roman numeral. XVII + V + X = ___",
+      "type": "multiple_choice",
+      "options": ["XXX", "XXXII", "XXVIII", "XXIX"],
+      "marks": 0.5,
+      "topic": "Roman numerals",
+      "difficulty": 2,
+      "expected_answer": "XXXII"
+    },
+    {
+      "question_number": "1d",
+      "text": "Which pair has an estimated sum of 100 (rounded to the nearest tens)?",
+      "type": "multiple_choice",
+      "options": ["43 + 74", "47 + 58", "52 + 69", "36 + 61"],
+      "marks": 0.5,
+      "topic": "Rounding",
+      "difficulty": 3,
+      "expected_answer": "36 + 61"
+    },
+    {
+      "question_number": "2a",
+      "text": "Write the predecessor and successor of 4759.",
+      "type": "fill_in_the_blank",
+      "marks": 1,
+      "topic": "Predecessor and successor",
+      "difficulty": 1,
+      "expected_answer": "4758, 4760"
+    },
+    {
+      "question_number": "2b",
+      "text": "Write the predecessor and successor of 6990.",
+      "type": "fill_in_the_blank",
+      "marks": 1,
+      "topic": "Predecessor and successor",
+      "difficulty": 1,
+      "expected_answer": "6989, 6991"
+    },
+    {
+      "question_number": "3a",
+      "text": "Write the roman number for 27.",
+      "type": "roman_numeral",
+      "marks": 0.5,
+      "topic": "Roman numerals",
+      "difficulty": 2,
+      "expected_answer": "XXVII"
+    },
+    {
+      "question_number": "3b",
+      "text": "Write the roman number for 35.",
+      "type": "roman_numeral",
+      "marks": 0.5,
+      "topic": "Roman numerals",
+      "difficulty": 2,
+      "expected_answer": "XXXV"
+    },
+    {
+      "question_number": "4a",
+      "text": "Solve by breaking up to make ten: 7 + 8",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 1,
+      "expected_answer": "15"
+    },
+    {
+      "question_number": "4b",
+      "text": "Solve by breaking up to make ten: 35 + 12",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 2,
+      "expected_answer": "47"
+    },
+    {
+      "question_number": "4c",
+      "text": "Solve by breaking up to make ten: 44 + 9",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 2,
+      "expected_answer": "53"
+    },
+    {
+      "question_number": "5a",
+      "text": "Arrange these Roman numerals in ascending order: XV, IX, XX, XII, VII, III",
+      "type": "roman_numeral",
+      "marks": 1,
+      "topic": "Roman numerals",
+      "difficulty": 3,
+      "expected_answer": "III, VII, IX, XII, XV, XX"
+    },
+    {
+      "question_number": "5b",
+      "text": "Arrange these Roman numerals in descending order: XV, IX, XX, XII, VII, III",
+      "type": "roman_numeral",
+      "marks": 1,
+      "topic": "Roman numerals",
+      "difficulty": 3,
+      "expected_answer": "XX, XV, XII, IX, VII, III"
+    },
+    {
+      "question_number": "6a",
+      "text": "Arrange in columns and add: 2439 + 235",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 3,
+      "expected_answer": "2674"
+    },
+    {
+      "question_number": "6b",
+      "text": "Arrange in columns and add: 2712 + 3347",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 3,
+      "expected_answer": "6059"
+    },
+    {
+      "question_number": "6c",
+      "text": "Arrange in columns and add: 3142 + 2336 + 78",
+      "type": "arithmetic",
+      "marks": 1,
+      "topic": "Addition",
+      "difficulty": 4,
+      "expected_answer": "5556"
+    },
+    {
+      "question_number": "7a",
+      "text": "The cost of two toys is Rs 47 and Rs 64. Find the exact total cost by adding the two amounts.",
+      "type": "word_problem",
+      "marks": 0.5,
+      "topic": "Addition word problem",
+      "difficulty": 2,
+      "expected_answer": "111"
+    },
+    {
+      "question_number": "7b",
+      "text": "The cost of two toys is Rs 47 and Rs 64. Estimate the total cost by rounding each amount to the nearest ten.",
+      "type": "rounding",
+      "marks": 0.5,
+      "topic": "Rounding",
+      "difficulty": 3,
+      "expected_answer": "110"
+    },
+    {
+      "question_number": "8a",
+      "text": "A library has 655 books. A donator donates 167 books to the library. How many books are there in the library?",
+      "type": "word_problem",
+      "marks": 2,
+      "topic": "Addition word problem",
+      "difficulty": 3,
+      "expected_answer": "822"
+    },
+    {
+      "question_number": "8b",
+      "text": "A shopkeeper sold 659 soap cakes in first week and 165 soap cakes in second week. How many soap cakes did he sell in these two weeks?",
+      "type": "word_problem",
+      "marks": 2,
+      "topic": "Addition word problem",
+      "difficulty": 3,
+      "expected_answer": "824"
+    },
+    {
+      "question_number": "8c",
+      "text": "The school library has 245 storybooks, 368 science books, and 157 comic books. It also has 5 computers for students to use. How many books are there in the library altogether?",
+      "type": "word_problem",
+      "marks": 2,
+      "topic": "Addition word problem",
+      "difficulty": 4,
+      "expected_answer": "770"
+    }
+  ]
+}
