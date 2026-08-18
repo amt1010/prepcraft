@@ -43,3 +43,20 @@ class DifficultyFeatures(BaseModel):
         if self.vocabulary_level == "advanced":
             points += 1
         return min(points, 5)
+
+
+class Question(BaseModel):
+    id: str
+    paper_id: str
+    question_number: str
+    type: QuestionType
+    text: str
+    options: list[str] | None = None
+    marks: float
+    topic: str
+    difficulty: int
+    difficulty_features: DifficultyFeatures
+    expected_answer: str
+    answer_type: Literal["numeric", "text", "choice", "boolean"]
+    source: Literal["existing_paper", "generated"]
+    template_id: str | None = None
