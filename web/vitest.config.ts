@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./tests/setup/dbCleanup.ts"],
+    setupFiles: ["./tests/setup/dbCleanup.ts", "./tests/setup/jestDom.ts"],
     passWithNoTests: true,
     clearMocks: true,
     // Integration test files share one real Postgres database and each
