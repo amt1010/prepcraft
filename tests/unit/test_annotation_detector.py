@@ -38,6 +38,35 @@ def test_does_not_flag_the_calibrated_printed_header_as_a_candidate():
     assert candidates[10:20, 10:100].mean() < 0.2
 
 
+def test_flags_bright_saturated_red_ink_not_just_dark_red():
+    """Real photographed red ink under good lighting is often bright (high
+    V), not dark — the background check must key off low saturation, not
+    high value alone, or bright colored ink gets misclassified as
+    background paper. Confirmed against the golden paper's red score
+    circle, whose ink pixels were ~90% v>200."""
+    page = _page_with_marks()
+    page[100:120, 20:60] = (127, 75, 222)  # bright red, BGR, matches golden paper
+
+    candidates = detect_color_candidates(page)
+
+    assert candidates[105:115, 25:55].mean() > 0.8
+
+
+def test_does_not_flag_a_colorful_header_banner_graphic_as_a_candidate():
+    """A pre-printed letterhead/banner graphic (school crest, colored
+    background block) can be more saturated than plain black text, which
+    would otherwise make it look like colored ink. The header region is
+    already used as the 'this is printed' calibration source, so it's
+    excluded from the candidate mask entirely rather than needing to also
+    pass the same colored-ink test as the rest of the page."""
+    page = _page_with_marks()
+    page[0:8, 100:180] = (200, 30, 30)  # saturated blue banner graphic
+
+    candidates = detect_color_candidates(page)
+
+    assert candidates[0:8, 100:180].mean() == 0.0
+
+
 def test_does_not_flag_plain_background_as_a_candidate():
     page = _page_with_marks()
 
@@ -62,6 +91,16 @@ def test_keeps_a_blob_shaped_component():
     filtered = filter_by_stroke_shape(mask)
 
     assert filtered[40:60, 40:60].all()
+
+
+def test_discards_tiny_specks_below_minimum_area():
+    mask = np.zeros((100, 100), dtype=bool)
+    mask[10, 10] = True         # 1px speck
+    mask[30:32, 30:32] = True   # 4px speck
+
+    filtered = filter_by_stroke_shape(mask)
+
+    assert not filtered.any()
 
 
 class _FakeVisionProvider:

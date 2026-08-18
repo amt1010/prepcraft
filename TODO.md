@@ -88,15 +88,68 @@ work queue, not a history log (git history is the log).
 
 ## Phase 3 — Image cleaning
 
-- [ ] `preprocessing/perspective.py`, `enhancement.py`
-- [ ] `preprocessing/annotation_detector.py` — color-space + stroke +
+- [x] `preprocessing/perspective.py`, `enhancement.py`
+- [x] `preprocessing/annotation_detector.py` — color-space + stroke +
       layout heuristics (PIPELINE.md detail)
-- [ ] `preprocessing/annotation_remover.py` — inpainting
-- [ ] `providers/vision/` — `VisionProvider` interface + Claude
+- [x] `preprocessing/annotation_remover.py` — inpainting
+- [x] `providers/vision/` — `VisionProvider` interface + Claude
       implementation, used for low-confidence annotation regions
 - [ ] Hand-label a mask for golden paper page 1, wire up the precision/
-      recall check from EVALUATION.md
-- [ ] CLI: `python -m app clean-paper <run_id>`
+      recall check from EVALUATION.md — `compute_mask_precision_recall`
+      exists and is unit-tested, but there is still no real ground-truth
+      mask to run it against. Deferred; needs a human to hand-label one
+      golden paper page.
+- [x] CLI: `python -m app clean-paper <run_id>`
+
+### Golden paper verification findings (2026-08-18)
+
+Ran `clean-paper` against all 4 golden paper pages and visually inspected
+every `05_annotation_mask.png` / `06_cleaned.png` against the source. Found
+and fixed three real bugs in `annotation_detector.py`, all confirmed only
+by this real-photo test — the synthetic unit fixtures never exercised
+them:
+
+1. **Header self-calibration got skewed by the school banner's near-black
+   fill**, pulling the "printed" brightness threshold too low and making
+   ordinary printed text elsewhere look like pencil by comparison. Fixed
+   by excluding near-pure-black pixels from calibration and adding a
+   margin above the calibrated threshold before calling something pencil.
+2. **Anti-aliased/JPEG edges around ordinary printed glyphs produced
+   thousands of 1-6px specks** in the same brightness range as light
+   pencil marks (median component area 2px, 9634 components on page 1
+   alone). Added a `min_area=20` floor to `filter_by_stroke_shape` —
+   real strokes are far bigger than compression noise.
+3. **The header/calibration region was being flagged against its own
+   calibration** — a colorful banner graphic is more saturated than
+   plain black text, so it read as "colored ink." Now excluded from the
+   output mask entirely, since it's the "this is what printed looks
+   like" reference region by construction.
+4. **Bright colored ink was being zeroed out as background.** `background
+   = v_channel > 200` keyed on brightness alone; real red pen ink under
+   good lighting is often v>200 too (confirmed ~90% of one red circle's
+   ink pixels). Background now also requires low saturation, and the
+   `colored_ink` branch's redundant `v < 220` cap was removed.
+
+Net effect on page 1: 63887 → 16402 flagged pixels, and the difference is
+qualitative, not just quantitative — before the fix the mask was mostly
+printed text and table lines; after, it closely tracks the actual visible
+red-ink annotations (score circle, ✗/✓ marks, circled numbers,
+signatures) while leaving the banner, questions, and tables untouched.
+Confirmed on all 4 pages.
+
+**Known limitation, not yet fixed:** pencil/graphite student answers
+(the actual handwritten digits, as opposed to the teacher's red-ink
+marks) are still under-detected by the heuristics alone — real pencil
+strokes and anti-aliased printed-text edges overlap too much in
+brightness to separate reliably without help. This is expected: PIPELINE.md's
+design always intended the `vision_provider` step to disambiguate
+exactly this kind of ambiguous case, and there is no `ANTHROPIC_API_KEY`
+configured in this environment, so that path is untested end-to-end.
+Also open: whether `uncertainty_band` should route to vision-assist by
+component size (current behavior) or by signal type — e.g. always
+vision-checking anything classified as "pencil" rather than "colored
+ink," since pencil is inherently the more ambiguous signal regardless of
+size.
 
 ## Phase 4 — OCR + extraction
 
