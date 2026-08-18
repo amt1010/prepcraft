@@ -1,11 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { resolveTier, TEST_BYPASS_TIER } from "../../src/lib/tier";
+import { seedTiers } from "../../prisma/seed";
 
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL_TEST } } });
 
 beforeEach(async () => {
   await prisma.subscription.deleteMany();
   await prisma.user.deleteMany();
+  await seedTiers(prisma); // Subscription.tierId is a real FK to Tier
 });
 afterAll(() => prisma.$disconnect());
 

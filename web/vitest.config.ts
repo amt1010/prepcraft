@@ -7,7 +7,12 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: [],
+    setupFiles: ["./tests/setup/dbCleanup.ts"],
     passWithNoTests: true,
+    clearMocks: true,
+    // Integration test files share one real Postgres database and each
+    // does global deleteMany() cleanup in beforeEach — running files in
+    // parallel lets one file's cleanup stomp on another's fixtures mid-test.
+    fileParallelism: false,
   },
 });
