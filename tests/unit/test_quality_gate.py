@@ -3,23 +3,29 @@ import numpy as np
 
 from app.backend.preprocessing.quality_gate import (
     evaluate_quality,
-    measure_skew_degrees,
     measure_sharpness,
+    measure_skew_degrees,
 )
 
 
 def test_evaluate_quality_passes_when_both_metrics_are_within_tolerance():
-    report = evaluate_quality(skew_degrees=5, sharpness_score=200, max_skew_degrees=20, min_sharpness=100)
+    report = evaluate_quality(
+        skew_degrees=5, sharpness_score=200, max_skew_degrees=20, min_sharpness=100
+    )
     assert report.verdict == "pass"
 
 
 def test_evaluate_quality_fails_when_both_metrics_are_outside_tolerance():
-    report = evaluate_quality(skew_degrees=45, sharpness_score=10, max_skew_degrees=20, min_sharpness=100)
+    report = evaluate_quality(
+        skew_degrees=45, sharpness_score=10, max_skew_degrees=20, min_sharpness=100
+    )
     assert report.verdict == "fail"
 
 
 def test_evaluate_quality_flags_when_exactly_one_metric_is_outside_tolerance():
-    report = evaluate_quality(skew_degrees=45, sharpness_score=200, max_skew_degrees=20, min_sharpness=100)
+    report = evaluate_quality(
+        skew_degrees=45, sharpness_score=200, max_skew_degrees=20, min_sharpness=100
+    )
     assert report.verdict == "flagged"
     assert report.skew_within_tolerance is False
     assert report.sharpness_acceptable is True

@@ -54,8 +54,12 @@ def _order_corners(pts: np.ndarray) -> np.ndarray:
 
 def _warp_perspective(image: np.ndarray, corners: np.ndarray) -> np.ndarray:
     top_left, top_right, bottom_right, bottom_left = corners
-    width = int(max(np.linalg.norm(bottom_right - bottom_left), np.linalg.norm(top_right - top_left)))
-    height = int(max(np.linalg.norm(top_right - bottom_right), np.linalg.norm(top_left - bottom_left)))
+    width = int(
+        max(np.linalg.norm(bottom_right - bottom_left), np.linalg.norm(top_right - top_left))
+    )
+    height = int(
+        max(np.linalg.norm(top_right - bottom_right), np.linalg.norm(top_left - bottom_left))
+    )
     destination = np.array(
         [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]], dtype=np.float32
     )
