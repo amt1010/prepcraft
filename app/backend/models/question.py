@@ -4,13 +4,13 @@
 particular difficulty") — every question's 1-5 level must trace back to
 this method, never be assigned as a bare number elsewhere."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
 
 
-class QuestionType(str, Enum):
+class QuestionType(StrEnum):
     MULTIPLE_CHOICE = "multiple_choice"
     FILL_BLANK = "fill_in_the_blank"
     TRUE_FALSE = "true_false"
