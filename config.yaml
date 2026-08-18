@@ -1,0 +1,33 @@
+# Non-secret application settings. Loaded by app/backend/core/config.py.
+# Secrets (API keys) go in .env, never here — see .env.example.
+#
+# quality.* and models.* below are the target Phase 3/7 shape (PIPELINE.md
+# "Image quality gate", ARCHITECTURE.md "Model choice per pipeline stage").
+# AppConfig only exposes the flat fields below as of Phase 1 — extend it
+# when those phases land (see TODO.md).
+
+ai_provider: claude
+ocr_provider: tesseract
+storage_root: data
+log_level: INFO
+pdf_page_size: A4
+generation_max_regenerate_attempts: 3
+
+# Per-pipeline-stage model routing. Perception tasks (is this pixel region
+# printed or handwritten; transcribe this low-confidence crop) go to the
+# cheap/fast model; judgment tasks (classify a question, draft new question
+# text) go to the model that reasons better. Overriding one stage doesn't
+# require touching the others.
+models:
+  annotation_vision: claude-haiku-4-5
+  ocr_fallback: claude-haiku-4-5
+  question_classification: claude-sonnet-5
+  question_generation: claude-sonnet-5
+
+# Image quality gate (PIPELINE.md). A page whose skew exceeds
+# max_skew_degrees, or whose sharpness_score falls below min_sharpness,
+# fails the gate and is never auto-corrected — the user is asked to
+# re-capture it rather than the pipeline silently processing a bad scan.
+quality:
+  max_skew_degrees: 20
+  min_sharpness: 100  # placeholder until tuned against a blurred fixture

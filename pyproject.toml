@@ -1,0 +1,42 @@
+[project]
+name = "ai-practice-paper-generator"
+version = "0.1.0"
+description = "Ingest school question papers and textbook content, clean handwritten annotations, and generate new practice papers with matching answer sheets."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "opencv-python-headless>=4.10",
+    "pillow>=11.0",
+    "numpy>=2.1",
+    "pytesseract>=0.3.13",
+    "reportlab>=4.2",
+    "sqlalchemy>=2.0",
+    "typer>=0.13",
+    "anthropic>=0.40",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
