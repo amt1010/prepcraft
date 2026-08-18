@@ -32,3 +32,20 @@ def detect_color_candidates(image: np.ndarray, header_fraction: float = 0.15) ->
     )
 
     return (colored_ink | pencil) & ~background & ~printed_like
+
+
+def filter_by_stroke_shape(mask: np.ndarray, max_aspect_ratio: float = 15.0) -> np.ndarray:
+    """Discards connected components that look like printed rule lines or
+    borders (very long, thin, straight) rather than handwriting strokes
+    (PIPELINE.md's annotation-removal step 2)."""
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        mask.astype(np.uint8), connectivity=8
+    )
+    filtered = np.zeros_like(mask, dtype=bool)
+    for label in range(1, num_labels):
+        width = stats[label, cv2.CC_STAT_WIDTH]
+        height = stats[label, cv2.CC_STAT_HEIGHT]
+        aspect_ratio = max(width, height) / max(min(width, height), 1)
+        if aspect_ratio <= max_aspect_ratio:
+            filtered[labels == label] = True
+    return filtered
