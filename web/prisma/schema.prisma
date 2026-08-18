@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+model User {
+  id                  String          @id
+  email               String          @unique
+  role                UserRole        @default(user)
+  isTestBypassAccount Boolean         @default(false) @map("is_test_bypass_account")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  subscriptions       Subscription[]
+  auditLogs           AdminAuditLog[] @relation("AuditLogAdmin")
+
+  @@map("users")
+}
+
+enum TierId {
+  guest
+  registered_free
+  subscribed_monthly
+  subscribed_annual
+}
+
+enum BillingInterval {
+  none
+  monthly
+  annual
+}
+
+model Tier {
+  id              TierId          @id
+  name            String
+  scansPerPeriod  Int             @map("scans_per_period")
+  pdfsPerPeriod   Int             @map("pdfs_per_period")
+  priceAmount     Int?            @map("price_amount")
+  currency        String?
+  billingInterval BillingInterval @default(none) @map("billing_interval")
+  isActive        Boolean         @default(true) @map("is_active")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  updatedBy       String?         @map("updated_by")
+  subscriptions   Subscription[]
+
+  @@map("tiers")
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @map("user_id")
+  user                   User               @relation(fields: [userId], references: [id])
+  tierId                 TierId             @map("tier_id")
+  tier                   Tier               @relation(fields: [tierId], references: [id])
+  status                 SubscriptionStatus
+  startedAt              DateTime           @map("started_at")
+  currentPeriodEnd       DateTime           @map("current_period_end")
+  externalSubscriptionId String?            @map("external_subscription_id")
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+enum IdentityType {
+  guest_ip
+  user
+}
+
+model UsageCounter {
+  id           String       @id @default(cuid())
+  identityType IdentityType @map("identity_type")
+  identityKey  String       @map("identity_key")
+  periodStart  DateTime     @map("period_start")
+  periodEnd    DateTime     @map("period_end")
+  scansUsed    Int          @default(0) @map("scans_used")
+  pdfsUsed     Int          @default(0) @map("pdfs_used")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@unique([identityType, identityKey, periodStart])
+  @@map("usage_counters")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminUserId String   @map("admin_user_id")
+  admin       User     @relation("AuditLogAdmin", fields: [adminUserId], references: [id])
+  action      String
+  target      String
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("admin_audit_log")
+}
