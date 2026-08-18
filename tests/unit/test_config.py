@@ -36,3 +36,23 @@ def test_load_config_treats_empty_file_as_all_defaults(tmp_path: Path):
     config = load_config(config_file)
 
     assert config == AppConfig()
+
+
+def test_load_config_reads_nested_quality_thresholds(tmp_path: Path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("quality:\n  max_skew_degrees: 15\n  min_sharpness: 80\n")
+
+    config = load_config(config_file)
+
+    assert config.quality.max_skew_degrees == 15
+    assert config.quality.min_sharpness == 80
+
+
+def test_load_config_defaults_quality_thresholds_when_omitted(tmp_path: Path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("ai_provider: openai\n")
+
+    config = load_config(config_file)
+
+    assert config.quality.max_skew_degrees == 20.0
+    assert config.quality.min_sharpness == 100.0

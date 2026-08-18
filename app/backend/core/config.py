@@ -12,6 +12,11 @@ import yaml
 from pydantic import BaseModel
 
 
+class QualityConfig(BaseModel):
+    max_skew_degrees: float = 20.0
+    min_sharpness: float = 100.0
+
+
 class AppConfig(BaseModel):
     ai_provider: str = "claude"
     ai_model: str = "claude-sonnet-5"
@@ -20,6 +25,7 @@ class AppConfig(BaseModel):
     log_level: str = "INFO"
     pdf_page_size: str = "A4"
     generation_max_regenerate_attempts: int = 3
+    quality: QualityConfig = QualityConfig()
 
 
 def load_config(path: Path) -> AppConfig:
