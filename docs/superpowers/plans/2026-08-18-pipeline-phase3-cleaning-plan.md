@@ -106,7 +106,7 @@ tests/integration/
 - Produces: `estimate_rotation_via_hough(image: np.ndarray) -> float`
   (signed degrees, 0.0 if no reliable line signal), `correct_perspective(image: np.ndarray) -> np.ndarray`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 import cv2
@@ -170,12 +170,12 @@ def test_correct_perspective_straightens_a_rotated_image():
     assert abs(corrected_angle) < 1.0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_perspective.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.preprocessing.perspective'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 import cv2
@@ -222,7 +222,7 @@ def correct_perspective(image: np.ndarray) -> np.ndarray:
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_perspective.py -v`
 Expected: PASS (5 tests). If `correct_perspective`'s rotation direction is
@@ -230,7 +230,7 @@ backwards (the corrected angle test fails with a *doubled* residual angle
 instead of near-zero), flip the sign: `cv2.getRotationMatrix2D(center,
 angle, 1.0)` instead of `-angle` — confirm empirically here, don't guess.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/perspective.py tests/unit/test_perspective.py
@@ -248,7 +248,7 @@ git commit -m "add PerspectiveCorrector: Hough-based residual rotation correctio
 **Interfaces:**
 - Produces: `enhance_image(image: np.ndarray) -> np.ndarray`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 import cv2
@@ -290,12 +290,12 @@ def test_enhance_image_preserves_image_shape_and_dtype():
     assert result.dtype == np.uint8
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_enhancement.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.preprocessing.enhancement'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 import cv2
@@ -328,12 +328,12 @@ def _boost_contrast(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_enhancement.py -v`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/enhancement.py tests/unit/test_enhancement.py
@@ -352,7 +352,7 @@ git commit -m "add ImageEnhancer: shadow removal + CLAHE contrast boost"
 - Produces: `detect_color_candidates(image: np.ndarray, header_fraction:
   float = 0.15) -> np.ndarray` (boolean mask, same H×W as input).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 import numpy as np
@@ -396,12 +396,12 @@ def test_does_not_flag_plain_background_as_a_candidate():
     assert candidates[0:5, 150:195].mean() < 0.1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.preprocessing.annotation_detector'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 import cv2
@@ -440,14 +440,14 @@ def detect_color_candidates(image: np.ndarray, header_fraction: float = 0.15) ->
     return (colored_ink | pencil) & ~background & ~printed_like
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: PASS (3 tests). If a threshold is off (e.g. the pencil mark not
 flagged), adjust the `+ 40` saturation margin or the percentile — tune
 against this concrete synthetic fixture, not blindly.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/annotation_detector.py tests/unit/test_annotation_detector.py
@@ -467,7 +467,7 @@ git commit -m "add AnnotationDetector: self-calibrated color-space ink candidate
 - Produces: `filter_by_stroke_shape(mask: np.ndarray, max_aspect_ratio:
   float = 15.0) -> np.ndarray`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `tests/unit/test_annotation_detector.py`:
 
@@ -493,12 +493,12 @@ def test_keeps_a_blob_shaped_component():
     assert filtered[40:60, 40:60].all()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: FAIL — `ImportError: cannot import name 'filter_by_stroke_shape'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Add to `app/backend/preprocessing/annotation_detector.py`:
 
@@ -520,12 +520,12 @@ def filter_by_stroke_shape(mask: np.ndarray, max_aspect_ratio: float = 15.0) -> 
     return filtered
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: PASS (5 tests — 3 from Task 3 + 2 new)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/annotation_detector.py tests/unit/test_annotation_detector.py
@@ -550,7 +550,7 @@ git commit -m "add AnnotationDetector: discard rule-line-shaped components"
   Haiku-for-perception-tasks choice from ARCHITECTURE.md's "Model choice
   per pipeline stage" section.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 from unittest.mock import MagicMock, patch
@@ -593,12 +593,12 @@ def test_analyze_region_sends_the_image_as_base64_and_uses_the_configured_model(
         assert content[0]["source"]["type"] == "base64"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_vision_provider.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.providers'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `app/backend/providers/__init__.py`: empty file.
 
@@ -652,12 +652,12 @@ class ClaudeVisionProvider:
         return response.parsed_output
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_vision_provider.py -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/providers/ tests/unit/test_vision_provider.py
@@ -682,7 +682,7 @@ git commit -m "add VisionProvider interface and ClaudeVisionProvider"
   | None = None, uncertainty_band: tuple[int, int] = (20, 60)) ->
   AnnotationMaskResult`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `tests/unit/test_annotation_detector.py`:
 
@@ -745,12 +745,12 @@ def test_detect_annotations_calls_vision_provider_only_for_mid_sized_ambiguous_c
 Add `import pytest` to the top of `tests/unit/test_annotation_detector.py`
 if not already present.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: FAIL — `ImportError: cannot import name 'detect_annotations'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Add to `app/backend/preprocessing/annotation_detector.py`:
 
@@ -833,12 +833,12 @@ def detect_annotations(
     return AnnotationMaskResult(mask=final_mask, confidence=confidence)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_detector.py -v`
 Expected: PASS (9 tests total)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/annotation_detector.py tests/unit/test_annotation_detector.py
@@ -856,7 +856,7 @@ git commit -m "add AnnotationDetector orchestration: heuristics + targeted visio
 **Interfaces:**
 - Produces: `remove_annotations(image: np.ndarray, mask: np.ndarray) -> np.ndarray`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 import numpy as np
@@ -892,12 +892,12 @@ def test_remove_annotations_leaves_unmasked_pixels_unchanged():
     assert np.array_equal(result, page)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_remover.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.preprocessing.annotation_remover'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 import cv2
@@ -913,12 +913,12 @@ def remove_annotations(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return cv2.inpaint(image, mask_uint8, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_annotation_remover.py -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/preprocessing/annotation_remover.py tests/unit/test_annotation_remover.py
@@ -942,7 +942,7 @@ git commit -m "add AnnotationRemover: background-aware inpainting"
   np.ndarray`, `ArtifactStore.list_pages() -> list[int]`; CLI command
   `python -m app clean-paper <run_id> [--storage-root PATH]`.
 
-- [ ] **Step 1: Write the failing test — ArtifactStore additions**
+- [x] **Step 1: Write the failing test — ArtifactStore additions**
 
 Add to `tests/unit/test_artifact_store.py`:
 
@@ -975,12 +975,12 @@ def test_list_pages_returns_empty_list_for_a_run_that_does_not_exist(tmp_path):
     assert store.list_pages() == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_artifact_store.py -v`
 Expected: FAIL — `AttributeError: 'ArtifactStore' object has no attribute 'load_image'`
 
-- [ ] **Step 3: Write minimal implementation — ArtifactStore**
+- [x] **Step 3: Write minimal implementation — ArtifactStore**
 
 Add to `app/backend/storage/artifact_store.py`:
 
@@ -1001,12 +1001,12 @@ Add to `app/backend/storage/artifact_store.py`:
         return sorted(pages)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_artifact_store.py -v`
 Expected: PASS (6 tests — 3 existing + 3 new)
 
-- [ ] **Step 5: Write the failing test — `clean-paper` CLI**
+- [x] **Step 5: Write the failing test — `clean-paper` CLI**
 
 ```python
 import numpy as np
@@ -1043,12 +1043,12 @@ def test_clean_paper_exits_with_an_error_when_the_run_has_no_pages(tmp_path):
     assert result.exit_code == 1
 ```
 
-- [ ] **Step 6: Run test to verify it fails**
+- [x] **Step 6: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/integration/test_clean_paper_cli.py -v`
 Expected: FAIL — `No such command 'clean-paper'`
 
-- [ ] **Step 7: Write minimal implementation — CLI**
+- [x] **Step 7: Write minimal implementation — CLI**
 
 Add to `app/cli.py`:
 
@@ -1102,17 +1102,17 @@ def clean_paper(run_id: str, storage_root: Path = Path("data/processed")) -> Non
     typer.echo(f"Cleaned artifacts written to {store.run_dir}")
 ```
 
-- [ ] **Step 8: Run test to verify it passes**
+- [x] **Step 8: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/integration/test_clean_paper_cli.py -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 9: Run the full test suite**
+- [x] **Step 9: Run the full test suite**
 
 Run: `.venv/Scripts/python.exe -m pytest -q`
 Expected: all pass
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add app/backend/storage/artifact_store.py app/cli.py tests/unit/test_artifact_store.py tests/integration/test_clean_paper_cli.py
@@ -1132,7 +1132,7 @@ git commit -m "add ArtifactStore loading and clean-paper CLI command"
   ground_truth: np.ndarray) -> tuple[float, float]` — EVALUATION.md's
   annotation-mask precision/recall metric.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 import numpy as np
@@ -1185,12 +1185,12 @@ def test_empty_prediction_gives_zero_precision_not_a_division_error():
     assert recall == 0.0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_mask_metrics.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.backend.evaluation'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `app/backend/evaluation/__init__.py`: empty file.
 
@@ -1215,19 +1215,19 @@ def compute_mask_precision_recall(
     return precision, recall
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/unit/test_mask_metrics.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/backend/evaluation/ tests/unit/test_mask_metrics.py
 git commit -m "add mask precision/recall metric (EVALUATION.md)"
 ```
 
-- [ ] **Step 6: Run the full pipeline against the golden paper**
+- [x] **Step 6: Run the full pipeline against the golden paper**
 
 Run `ingest-paper` then `clean-paper` for each golden paper page (reuse
 the `run_id` printed by `ingest-paper`):
@@ -1237,14 +1237,14 @@ the `run_id` printed by `ingest-paper`):
 .venv/Scripts/python.exe -m app clean-paper <run_id_from_output>
 ```
 
-- [ ] **Step 7: Inspect `05_annotation_mask.png` and `06_cleaned.png` for
+- [x] **Step 7: Inspect `05_annotation_mask.png` and `06_cleaned.png` for
       each page.** Check specifically: did it catch the blue pencil/pen
       student answers and red teacher ticks/circles/scores? Did it leave
       the printed questions, tables, and headers intact? Note anything
       that looks wrong (over-removal of printed content, or marks left
       behind) — this is exactly what spec §31 means by "inspectable."
 
-- [ ] **Step 8: Record the finding in `TODO.md` under Phase 3**, same
+- [x] **Step 8: Record the finding in `TODO.md` under Phase 3**, same
       style as Phase 2's Task 8 — what was actually observed on the real
       golden paper (not a synthetic fixture), and explicitly note that
       `compute_mask_precision_recall` has no real ground-truth mask to
