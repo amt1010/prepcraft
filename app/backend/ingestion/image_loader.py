@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import cv2
-import fitz
 import numpy as np
+import pymupdf as fitz
 
 _IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 

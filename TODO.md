@@ -49,18 +49,42 @@ work queue, not a history log (git history is the log).
 - [x] README.md "Local development"/"Testing" sections updated to real
       commands
 
-## Phase 2 — Ingestion
+## Phase 2 — Ingestion — **done 2026-08-18**
 
-- [ ] `app/backend/models/paper.py` — `Paper`, `Section` (DATA_MODEL.md)
-- [ ] `app/backend/ingestion/image_loader.py` — PDF/JPG/PNG -> page images
-- [ ] `app/backend/ingestion/page_detector.py` — boundary detection
-- [ ] `app/backend/storage/artifact_store.py` — `data/processed/<run_id>/`
-      read/write, stage numbering
-- [ ] CLI: `python -m app ingest-paper <path>`
-- [ ] Unit tests: image_loader on each input format; page_detector on a
-      deliberately skewed fixture image
-- [ ] Run against golden paper, inspect `01_original.png` /
-      `02_document_detected.png` manually
+- [x] `app/backend/models/paper.py` — `Paper`, `Section` (DATA_MODEL.md)
+- [x] `app/backend/ingestion/image_loader.py` — PDF/JPG/PNG -> page images
+      (PyMuPDF for PDF rasterization, no Poppler dependency)
+- [x] `app/backend/ingestion/page_detector.py` — contour-based boundary
+      detection + perspective warp, with a "page fills frame" fallback
+      when no quad is found
+- [x] `app/backend/preprocessing/quality_gate.py` — skew/sharpness
+      measurement + pass/flagged/fail verdict (added to Phase 2 rather
+      than Phase 3 since it sits right after PageDetector in PIPELINE.md
+      and needs nothing from PerspectiveCorrector)
+- [x] `app/backend/storage/artifact_store.py` — per-page
+      `data/processed/<run_id>/page_<NN>/<stage>.<ext>` artifacts
+- [x] `AppConfig.quality` (`max_skew_degrees`, `min_sharpness`) — closes
+      the Phase 1 follow-up noted in `config.yaml`
+- [x] CLI: `python -m app ingest-paper <path> [--storage-root PATH]
+      [--config-path PATH]`
+- [x] Unit/integration tests: image_loader on JPG + a generated PDF
+      fixture + unsupported extension; page_detector on synthetic
+      unrotated/rotated/blank fixtures; quality_gate verdict logic +
+      sharpness/skew measurement; CLI end-to-end
+- [x] Run against golden paper, inspect `01_original.png` /
+      `02_document_detected.png` manually — **finding**: on all 4 golden
+      paper pages, `PageDetector` takes the "page fills frame" fallback
+      path (no 4-point contour found), not the perspective-warp path.
+      These particular photos are already tightly cropped against a
+      plain background with no strong external edge to key off — not a
+      bug, but it means the perspective-warp code path is untested
+      against real data so far. Sharpness scores (1117-2671) are all
+      comfortably above the 100 threshold; all 4 pages verdict `pass`
+      with `skew=0.0` (the fallback's default). Before Phase 3 leans on
+      `PageDetector`'s corners for anything beyond this quality gate,
+      get a golden-paper photo that actually has visible background
+      around the page (e.g. shot on a desk, not pre-cropped) to exercise
+      the perspective-warp path for real.
 
 ## Phase 3 — Image cleaning
 
