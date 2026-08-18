@@ -1,0 +1,25 @@
+import json
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+
+class ArtifactStore:
+    def __init__(self, root: Path, run_id: str) -> None:
+        self.run_dir = Path(root) / run_id
+
+    def _page_dir(self, page: int) -> Path:
+        page_dir = self.run_dir / f"page_{page:02d}"
+        page_dir.mkdir(parents=True, exist_ok=True)
+        return page_dir
+
+    def save_image(self, page: int, stage_name: str, image: np.ndarray) -> Path:
+        path = self._page_dir(page) / f"{stage_name}.png"
+        Image.fromarray(image[:, :, ::-1] if image.ndim == 3 else image).save(path)
+        return path
+
+    def save_json(self, page: int, stage_name: str, data: dict) -> Path:
+        path = self._page_dir(page) / f"{stage_name}.json"
+        path.write_text(json.dumps(data, indent=2, default=str))
+        return path
