@@ -242,11 +242,11 @@ question), so a chunk of that 57%/21% gap is disagreement about label
 either a fixed topic taxonomy the model is asked to pick from, or a
 looser-than-exact-match grading rule — not yet decided.
 
-## Phase 5 — Structured question models
+## Phase 5 — Structured question models — **done 2026-08-18**
 
-- [ ] `app/backend/models/question.py` — `Question`, `QuestionType`,
+- [x] `app/backend/models/question.py` — `Question`, `QuestionType`,
       `DifficultyFeatures` (DATA_MODEL.md)
-- [ ] `DifficultyFeatures.score()` implementation + unit tests covering the
+- [x] `DifficultyFeatures.score()` implementation + unit tests covering the
       spec §16 easy/medium/harder examples
 
 ## Phase 6 — Validation
