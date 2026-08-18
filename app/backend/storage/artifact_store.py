@@ -23,3 +23,18 @@ class ArtifactStore:
         path = self._page_dir(page) / f"{stage_name}.json"
         path.write_text(json.dumps(data, indent=2, default=str))
         return path
+
+    def load_image(self, page: int, stage_name: str) -> np.ndarray:
+        path = self._page_dir(page) / f"{stage_name}.png"
+        pil_image = Image.open(path).convert("RGB")
+        return np.array(pil_image)[:, :, ::-1]  # RGB -> BGR
+
+    def list_pages(self) -> list[int]:
+        if not self.run_dir.exists():
+            return []
+        pages = [
+            int(child.name.removeprefix("page_"))
+            for child in self.run_dir.iterdir()
+            if child.is_dir() and child.name.startswith("page_")
+        ]
+        return sorted(pages)

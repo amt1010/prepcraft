@@ -33,3 +33,31 @@ def test_different_pages_get_separate_directories(tmp_path):
 
     assert (tmp_path / "RUN-001" / "page_01" / "01_original.png").exists()
     assert (tmp_path / "RUN-001" / "page_02" / "01_original.png").exists()
+
+
+def test_load_image_round_trips_a_saved_image(tmp_path):
+    store = ArtifactStore(tmp_path, "RUN-001")
+    image = np.zeros((10, 10, 3), dtype=np.uint8)
+    image[:, :, 2] = 200  # a distinct tint in the red channel (BGR)
+
+    store.save_image(1, "01_original", image)
+    loaded = store.load_image(1, "01_original")
+
+    assert loaded.shape == image.shape
+    assert np.array_equal(loaded, image)
+
+
+def test_list_pages_returns_sorted_page_numbers(tmp_path):
+    store = ArtifactStore(tmp_path, "RUN-001")
+    image = np.zeros((5, 5, 3), dtype=np.uint8)
+
+    store.save_image(2, "01_original", image)
+    store.save_image(1, "01_original", image)
+
+    assert store.list_pages() == [1, 2]
+
+
+def test_list_pages_returns_empty_list_for_a_run_that_does_not_exist(tmp_path):
+    store = ArtifactStore(tmp_path, "RUN-MISSING")
+
+    assert store.list_pages() == []

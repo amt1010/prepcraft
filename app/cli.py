@@ -10,13 +10,19 @@ import typer
 
 from app.backend.core.config import load_config
 from app.backend.core.ids import new_id
+from app.backend.core.secrets import Secrets
 from app.backend.ingestion.image_loader import load_pages
 from app.backend.ingestion.page_detector import detect_page
+from app.backend.preprocessing.annotation_detector import detect_annotations
+from app.backend.preprocessing.annotation_remover import remove_annotations
+from app.backend.preprocessing.enhancement import enhance_image
+from app.backend.preprocessing.perspective import correct_perspective
 from app.backend.preprocessing.quality_gate import (
     evaluate_quality,
     measure_sharpness,
     measure_skew_degrees,
 )
+from app.backend.providers.vision import ClaudeVisionProvider
 from app.backend.storage.artifact_store import ArtifactStore
 
 app = typer.Typer(help="AI Practice Paper Generator CLI")
@@ -69,6 +75,47 @@ def ingest_paper(
         )
 
     typer.echo(f"Artifacts written to {store.run_dir}")
+
+
+@app.command(name="clean-paper")
+def clean_paper(run_id: str, storage_root: Path = Path("data/processed")) -> None:
+    """Load a previously ingested run's detected pages, correct residual
+    rotation, fix lighting, detect and remove handwritten/marked
+    annotations, and write the cleaned artifacts."""
+    store = ArtifactStore(storage_root, run_id)
+    pages = store.list_pages()
+    if not pages:
+        typer.echo(f"No pages found for run {run_id} under {storage_root}")
+        raise typer.Exit(code=1)
+
+    secrets = Secrets()
+    vision_provider = (
+        ClaudeVisionProvider(api_key=secrets.anthropic_api_key)
+        if secrets.anthropic_api_key
+        else None
+    )
+
+    for index in pages:
+        detected = store.load_image(index, "02_document_detected")
+
+        corrected = correct_perspective(detected)
+        store.save_image(index, "03_perspective_corrected", corrected)
+
+        enhanced = enhance_image(corrected)
+        store.save_image(index, "04_enhanced", enhanced)
+
+        annotation_result = detect_annotations(enhanced, vision_provider=vision_provider)
+        mask_image = (annotation_result.mask * 255).astype("uint8")
+        store.save_image(index, "05_annotation_mask", mask_image)
+
+        cleaned = remove_annotations(enhanced, annotation_result.mask)
+        store.save_image(index, "06_cleaned", cleaned)
+
+        typer.echo(
+            f"[{index}] cleaned — {int(annotation_result.mask.sum())} annotation pixels removed"
+        )
+
+    typer.echo(f"Cleaned artifacts written to {store.run_dir}")
 
 
 if __name__ == "__main__":
