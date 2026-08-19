@@ -184,5 +184,15 @@ def extract_questions_cmd(
     typer.echo(f"Artifacts written to {store.run_dir}")
 
 
+@app.command(name="serve")
+def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Run the minimal manual-testing web page (upload a paper, get back
+    a regenerated question paper + answer sheet PDF)."""
+    import uvicorn
+
+    typer.echo(f"Serving at http://{host}:{port} — Ctrl+C to stop")
+    uvicorn.run("app.backend.api.server:app", host=host, port=port, reload=False)
+
+
 if __name__ == "__main__":
     app()
