@@ -302,10 +302,39 @@ either (`config.yaml` already has the setting from Phase 1) — that loop
 needs Phase 8's template-selection step to have something to regenerate
 *from* when a candidate fails validation.
 
-## Phase 8 — Paper blueprint
+## Phase 8 — Paper blueprint — **done 2026-08-19**
 
-- [ ] `app/backend/models/blueprint.py`
-- [ ] Blueprint derivation from extracted `Paper` structure (Workflow A)
+- [x] `app/backend/models/blueprint.py` — `BlueprintSection`, `PaperBlueprint`
+      (DATA_MODEL.md core entity, fields match the spec literally — every
+      field has a real caller this phase)
+- [x] `app/backend/blueprint/derive.py` — `derive_blueprint_from_paper`
+      (Workflow A): copies `Paper.sections` into `BlueprintSection`s,
+      computes `difficulty_level` as the rounded mean of extracted
+      `Question.difficulty`. `allowed_types` stays `None` per section —
+      `Question` still has no `section` field to derive it from (Phase 6's
+      TODO.md gap, still open)
+- [x] `app/backend/blueprint/template_selection.py` —
+      `select_templates_for_section` / `select_templates_for_blueprint`:
+      the "Template selection" step Phase 7 deferred here. Marks-exact
+      when `question_count` is set (no packing solver), greedy-fill by
+      marks otherwise
+- [x] `app/backend/validation/validator.py` — `validate_blueprint_compliance`:
+      total marks, per-section marks, per-section question counts,
+      per-section `allowed_types` (PROJECT_PLAN.md's "checking blueprint
+      compliance (marks/question counts add up)")
+- [x] Integration test: a blueprint derived from a synthetic extracted
+      `Paper` drives template selection + generation into a full candidate
+      paper that passes both `validate_paper` and
+      `validate_blueprint_compliance` with zero issues — closes
+      PROJECT_PLAN.md's Phase 8 acceptance bar
+
+Deliberately out of scope this phase (no caller exists yet to need them):
+no `generate-paper` CLI command — TODO.md's Phase 9-10 row only lists
+`render-paper`/`generate-answer-key`, so CLI wiring for the full
+blueprint-to-paper flow remains undecided. No `section` field added to
+`Question` — `BlueprintSection.allowed_types` stays undiscoverable from
+Workflow A extraction alone until that field exists; the integration test
+confirms template selection still works correctly without it.
 
 ## Phase 9-10 — PDF + answer sheet
 
