@@ -2,7 +2,10 @@ import pytest
 
 from app.backend.models.question import QuestionType
 from app.backend.questions.extraction import ExtractedSubQuestion
-from app.backend.questions.paper_assembly import question_from_extracted
+from app.backend.questions.paper_assembly import (
+    assemble_paper_from_extracted,
+    question_from_extracted,
+)
 
 
 def _extracted(**overrides) -> ExtractedSubQuestion:
@@ -86,3 +89,82 @@ def test_raises_on_the_unclassified_fallback_type():
 
     with pytest.raises(ValueError):
         question_from_extracted(extracted, paper_id="PAPER-1")
+
+
+def test_assembled_paper_uses_the_given_subject_class_and_duration():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[_extracted()],
+    )
+
+    assert paper.subject == "Mathematics"
+    assert paper.class_standard == "III"
+    assert paper.duration_minutes == 50
+    assert paper.source == "existing_paper"
+
+
+def test_total_marks_is_the_sum_of_extracted_marks():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[
+            _extracted(question_number="1", marks=1.0),
+            _extracted(question_number="2", marks=2.0),
+        ],
+    )
+
+    assert paper.total_marks == 3.0
+
+
+def test_all_questions_land_in_one_default_section():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[
+            _extracted(question_number="1", marks=1.0),
+            _extracted(question_number="2", marks=2.0),
+        ],
+    )
+
+    assert len(paper.sections) == 1
+    assert paper.sections[0].name == "All Questions"
+    assert paper.sections[0].marks == 3.0
+    assert paper.sections[0].question_count == 2
+
+
+def test_questions_reference_the_assembled_papers_id():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[_extracted()],
+    )
+
+    assert questions[0].paper_id == paper.id
+
+
+def test_empty_extracted_questions_produces_an_empty_paper():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[],
+    )
+
+    assert questions == []
+    assert paper.total_marks == 0.0
+    assert paper.sections[0].question_count == 0
+
+
+def test_propagates_the_converters_error_for_an_unclassified_question():
+    with pytest.raises(ValueError):
+        assemble_paper_from_extracted(
+            subject="Mathematics",
+            class_standard="III",
+            duration_minutes=50,
+            extracted_questions=[_extracted(marks=None, topic=None, difficulty=None)],
+        )

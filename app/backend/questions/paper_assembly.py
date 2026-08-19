@@ -6,7 +6,10 @@ plan's header for the judgment calls this file has to make about data
 extraction genuinely doesn't produce (expected_answer, difficulty_features,
 section grouping, paper-level metadata)."""
 
+from datetime import datetime
+
 from app.backend.core.ids import new_id
+from app.backend.models.paper import Paper, Section
 from app.backend.models.question import DifficultyFeatures, Question, QuestionType
 from app.backend.questions.extraction import ExtractedSubQuestion
 
@@ -58,3 +61,28 @@ def question_from_extracted(extracted: ExtractedSubQuestion, paper_id: str) -> Q
         answer_type=_ANSWER_TYPE_BY_QUESTION_TYPE.get(question_type, _DEFAULT_ANSWER_TYPE),
         source="existing_paper",
     )
+
+
+def assemble_paper_from_extracted(
+    subject: str,
+    class_standard: str,
+    duration_minutes: int,
+    extracted_questions: list[ExtractedSubQuestion],
+) -> tuple[Paper, list[Question]]:
+    paper_id = new_id("PAPER")
+    questions = [question_from_extracted(extracted, paper_id) for extracted in extracted_questions]
+    total_marks = sum(question.marks for question in questions)
+
+    paper = Paper(
+        id=paper_id,
+        subject=subject,
+        class_standard=class_standard,
+        total_marks=total_marks,
+        duration_minutes=duration_minutes,
+        sections=[
+            Section(name="All Questions", marks=total_marks, question_count=len(questions))
+        ],
+        source="existing_paper",
+        created_at=datetime.now(),
+    )
+    return paper, questions
