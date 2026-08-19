@@ -22,6 +22,7 @@ app/backend/
     document/      Document understanding: subject/class/topic/difficulty inference
     questions/     QuestionExtraction, QuestionTemplate model + registry
     blueprint/     PaperBlueprint derivation (Workflow A) + blueprint-driven template selection
+    answer_key/    AnswerKey builder — one entry per Question, from expected_answer (spec §20)
     knowledge/     Chapter knowledge extraction (Workflow B only)
     generation/    Candidate generation from templates, value sampling
     validation/    Answer recomputation, blueprint compliance, dedup, leakage checks
