@@ -414,6 +414,38 @@ every phase from 6 onward has flagged: no `generate-paper` command wiring
 extraction -> blueprint -> generation -> validation -> rendering into one
 real, disk-backed run.
 
+## generate_paper orchestrator — closes the Phase 6-10 caller gap — **done 2026-08-19**
+
+- [x] `app/backend/generation/paper_generator.py` — `generate_paper(source_paper,
+      source_questions, difficulty_override=None, rng=None, text_provider=None)
+      -> tuple[Paper, list[Question]]`: composes Phase 8's blueprint
+      derivation + template selection with Phase 7's question generation
+      into one function, closing every "no caller yet" note Phases 6-10
+      left in this file. `difficulty_override` gives PROJECT_PLAN.md's
+      demo `--difficulty` flag something real to plug into once a CLI
+      exists. Does not call `validate_paper`/`validate_blueprint_compliance`
+      internally — PROJECT_PLAN.md's demo treats generate and validate as
+      separate steps
+- [x] Integration test: a generated paper from a realistic source paper
+      passes both `validate_paper` and `validate_blueprint_compliance`
+      with zero issues
+
+**Two new gaps surfaced while scoping this** (found, not fixed — same
+"deliberately out of scope" discipline every phase has used):
+1. Nothing in the codebase builds a `Paper` (subject/class/total_marks/
+   duration_minutes/sections) from an extraction run. `ingest-paper` /
+   `clean-paper` / `extract-questions` never construct one.
+2. Nothing converts `questions/extraction.py`'s `ExtractedSubQuestion`
+   (no `id`, `expected_answer`, or `difficulty_features`) into Phase 5's
+   full `Question`. `extraction.py`'s own module docstring says this
+   conversion is "Phase 5's job" — Phase 5 built the `Question` model but
+   never actually wrote the converter.
+
+Together these mean `generate-paper --source <run_id>` (PROJECT_PLAN.md's
+demo step 4, spec's CLI list) still has nothing real to load from disk.
+Closing them is prerequisite work for that CLI command and for Phase 11's
+browser wizard, whichever comes first.
+
 ## Phase 11+ — deferred until MVP (Phases 2-10) is solid
 
 - [ ] Basic web UI (wizard, spec §23)
