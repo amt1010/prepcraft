@@ -34,7 +34,9 @@ def test_builds_a_valid_template():
 
 
 def test_distractor_offsets_default_to_none_but_can_be_set():
-    template = _template(question_type=QuestionType.MULTIPLE_CHOICE, distractor_offsets=[-10, -1, 10])
+    template = _template(
+        question_type=QuestionType.MULTIPLE_CHOICE, distractor_offsets=[-10, -1, 10]
+    )
 
     assert template.distractor_offsets == [-10, -1, 10]
 

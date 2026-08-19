@@ -26,7 +26,9 @@ from app.backend.models.question_template import QuestionTemplate
 from app.backend.providers.text_generation import TextGenerationProvider
 from app.backend.validation.answer_engine import evaluate
 
-_PHRASING_PROMPT = """Rewrite this Class III Mathematics question so it reads naturally, without changing any numbers, the blank ("___"), or the underlying meaning. Return only the rewritten question text.
+_PHRASING_PROMPT = """Rewrite this Class III Mathematics question so it reads naturally, \
+without changing any numbers, the blank ("___"), or the underlying meaning. Return only the \
+rewritten question text.
 
 Original: {text}
 """
@@ -77,7 +79,9 @@ def _build_options(
     return options
 
 
-def _difficulty_features(template: QuestionTemplate, variables: dict[str, int]) -> DifficultyFeatures:
+def _difficulty_features(
+    template: QuestionTemplate, variables: dict[str, int]
+) -> DifficultyFeatures:
     requires_carrying = (
         addition_requires_carrying(variables["a"], variables["b"])
         if "a" in variables and "b" in variables

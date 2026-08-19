@@ -100,9 +100,6 @@ def test_rounding_answers_are_correct():
         rng = random.Random(7)
         question = generate_question(template, paper_id="P-1", question_number="1", rng=rng)
         base = 10 if template.operation == "round_nearest_10" else 100
-        # the sampled n always appears before "nearest 10"/"nearest 100" in
-        # the template wording, so the first match in the text is n itself
-        n = int(re.search(r"\d+", question.text).group())
         assert int(question.expected_answer) % base == 0
 
 
