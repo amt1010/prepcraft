@@ -506,6 +506,38 @@ registry's difficulty coverage (currently 10 of 11 templates cap at
 difficulty 2) is recorded here as a real follow-up, not fixed as part of
 this change.
 
+## Workflow A: 1:1 question regeneration — **done 2026-08-19**
+
+Corrects the actual requirement, given directly after the gap-balancing fix
+above: Workflow A ("existing paper -> new paper") should replace each
+source question with a same-type, same-marks question using new values —
+not derive an aggregate blueprint and re-select templates against an
+aggregate target, which is what `generate_paper` does and is the *wrong*
+mechanism here (that aggregate approach produced the 52.0-vs-14.5 mismatch
+the gap-balancing fix papered over rather than actually solving).
+`generate_paper`/`derive_blueprint_from_paper`/`select_templates_for_blueprint`
+are unchanged and stay the right tool for Workflow B (`chapter -> new
+paper`), where there's no existing per-question structure to mirror.
+
+- [x] `app/backend/generation/question_generator.py` — `regenerate_question`:
+      picks any template matching the source question's `type` (no
+      difficulty/marks filtering — "irrespective of complexity"), calls
+      the existing `generate_question` for fresh values, then overrides
+      the result's `marks` to the *source* question's marks
+- [x] `app/backend/generation/paper_generator.py` — `regenerate_paper`:
+      maps `regenerate_question` 1:1 over every source question (same
+      `question_number`, same `marks`) and copies `source_paper.sections`
+      verbatim — since every question's marks matches its source
+      counterpart by construction, there is no aggregation step left to
+      introduce a marks mismatch
+- [x] Integration test: the literal `375 + 125 = ?` (0.5 marks) example
+      from the conversation, plus a realistic 3-question multi-type paper
+- [x] Re-ran the real `mental_maths` extraction (the same 26 real
+      questions, 14.5 marks, that broke `generate_paper`) through
+      `regenerate_paper`: achieved `total_marks` now equals the source's
+      `14.5` exactly (not `52.0`) — the mismatch is actually gone, not
+      relocated to a validation warning
+
 ## Phase 11+ — deferred until MVP (Phases 2-10) is solid
 
 - [ ] Basic web UI (wizard, spec §23)
