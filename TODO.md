@@ -336,12 +336,46 @@ blueprint-to-paper flow remains undecided. No `section` field added to
 Workflow A extraction alone until that field exists; the integration test
 confirms template selection still works correctly without it.
 
-## Phase 9-10 — PDF + answer sheet
+## Phase 9 — PDF generation — **done 2026-08-19**
 
-- [ ] `rendering/templates/simple_practice_paper.py` (ReportLab)
-- [ ] `rendering/renderer.py`
+- [x] `app/backend/rendering/templates/simple_practice_paper.py` —
+      `build_flowables`: title, subject/class/marks/duration header, then
+      every question numbered with its marks in the order given (no
+      section-grouping — `Question` still has no `section` field),
+      multiple-choice options lettered `(a)`/`(b)`/...
+- [x] `app/backend/rendering/renderer.py` — `render_question_paper`:
+      picks a ReportLab page size (`A4`/`LETTER`), writes the PDF via
+      `SimpleDocTemplate`. Depends only on `models` + `reportlab`, per
+      ARCHITECTURE.md's rendering constraint — never imports
+      `validation`/`providers`/`generation`; "validated data in" is the
+      caller's contract, demonstrated by this phase's integration test
+      calling `validate_paper` before rendering
+- [x] Integration test: a realistic multi-question-type paper (echoing
+      the golden paper's hand-transcribed fixture content) passes
+      `validate_paper` and renders to a well-formed, non-trivial PDF —
+      closes PROJECT_PLAN.md's Phase 9 acceptance bar
+- [x] Manual verification: rendered a demo PDF to
+      `data/generated/PHASE9-DEMO/question_paper.pdf` and read it back
+      with the Read tool's PDF support. Confirmed: title "Mathematics —
+      Class III" renders centered/bold with the em dash intact, the meta
+      line shows total marks and duration, all 4 questions appear
+      numbered in the given order with marks in italic brackets, and
+      question 1's four multiple-choice options are lettered `(a)`-`(d)`
+      and indented under it. No layout issues found, no fix needed.
+
+Deliberately out of scope this phase (no caller exists yet to need them):
+no `render-paper` CLI command — there is still no `generate-paper`
+orchestrator assembling a full pipeline run into one storable `Paper` +
+`list[Question]`, so a CLI command has nothing real to load from disk yet
+(same deferral Phase 8 recorded for `generate-paper` itself). No
+section-grouped "School exam style" template — deferred alongside the
+`Question.section` field gap.
+
+## Phase 10 — Answer sheet generation
+
 - [ ] `app/backend/models/answer_key.py` + builder from `Paper`
-- [ ] CLI: `render-paper`, `generate-answer-key`
+- [ ] `answer_sheet.pdf` rendering
+- [ ] CLI: `generate-answer-key`
 
 ## Phase 11+ — deferred until MVP (Phases 2-10) is solid
 
