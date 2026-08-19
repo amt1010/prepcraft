@@ -110,7 +110,8 @@ def test_difficulty_override_changes_which_templates_are_eligible():
 def test_generated_paper_marks_reflect_what_was_actually_generated_not_the_target():
     sections = [Section(name="Word Problems", marks=2.0, question_count=1)]
     source_paper = _source_paper(sections, total_marks=2.0)
-    source_questions = [_source_question("1", difficulty=1)]  # best-effort picks a 1.0-mark template
+    # best-effort picks a 1.0-mark template (no exact match at difficulty 1)
+    source_questions = [_source_question("1", difficulty=1)]
 
     generated_paper, generated_questions = generate_paper(
         source_paper, source_questions, rng=random.Random(3)

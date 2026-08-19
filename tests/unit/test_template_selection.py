@@ -45,7 +45,8 @@ def test_question_count_driven_selection_picks_templates_matching_per_question_m
 
 def test_question_count_driven_selection_falls_back_to_the_closest_available_marks():
     pool = [_template(id="TPL-1", marks=1.0)]
-    section = BlueprintSection(name="Arithmetic", marks=3.0, question_count=2)  # 1.5 each, no exact match
+    # 1.5 marks/question, no exact match
+    section = BlueprintSection(name="Arithmetic", marks=3.0, question_count=2)
 
     selected = select_templates_for_section(
         section, difficulty_level=1, rng=random.Random(1), templates=pool
@@ -68,7 +69,7 @@ def test_question_count_driven_selection_minimizes_the_gap_across_multiple_marks
         section, difficulty_level=1, rng=random.Random(1), templates=pool
     )
 
-    # slot 1 ideal=2.5 -> closest is 3.0 (gap 0.5); slot 2 ideal=(5.0-3.0)/1=2.0 -> closest is 1.5 (gap 0.5)
+    # slot 1 ideal=2.5 -> closest 3.0; slot 2 ideal=(5.0-3.0)/1=2.0 -> closest 1.5
     assert [t.id for t in selected] == ["TPL-BIG", "TPL-MED"]
     assert sum(t.marks for t in selected) == 4.5
 
@@ -86,7 +87,8 @@ def test_marks_only_selection_fills_the_exact_section_marks():
 
 def test_marks_only_selection_stops_when_nothing_more_is_affordable():
     pool = [_template(id="TPL-1", marks=2.0)]
-    section = BlueprintSection(name="X", marks=1.0)  # smallest template costs more than the whole section
+    # the only template costs more than the whole section
+    section = BlueprintSection(name="X", marks=1.0)
 
     selected = select_templates_for_section(
         section, difficulty_level=1, rng=random.Random(1), templates=pool
