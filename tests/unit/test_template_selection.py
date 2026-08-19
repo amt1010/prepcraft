@@ -43,14 +43,34 @@ def test_question_count_driven_selection_picks_templates_matching_per_question_m
     assert all(t.id == "TPL-1" for t in selected)
 
 
-def test_question_count_driven_selection_raises_when_no_template_matches_per_question_marks():
+def test_question_count_driven_selection_falls_back_to_the_closest_available_marks():
     pool = [_template(id="TPL-1", marks=1.0)]
-    section = BlueprintSection(name="Arithmetic", marks=3.0, question_count=2)
+    section = BlueprintSection(name="Arithmetic", marks=3.0, question_count=2)  # 1.5 each, no exact match
 
-    with pytest.raises(ValueError):
-        select_templates_for_section(
-            section, difficulty_level=1, rng=random.Random(1), templates=pool
-        )
+    selected = select_templates_for_section(
+        section, difficulty_level=1, rng=random.Random(1), templates=pool
+    )
+
+    assert len(selected) == 2
+    assert all(t.id == "TPL-1" for t in selected)
+    assert sum(t.marks for t in selected) == 2.0  # closest achievable from a 1-template pool
+
+
+def test_question_count_driven_selection_minimizes_the_gap_across_multiple_marks_values():
+    pool = [
+        _template(id="TPL-SMALL", marks=1.0),
+        _template(id="TPL-MED", marks=1.5),
+        _template(id="TPL-BIG", marks=3.0),
+    ]
+    section = BlueprintSection(name="X", marks=5.0, question_count=2)  # 2.5 each, no exact match
+
+    selected = select_templates_for_section(
+        section, difficulty_level=1, rng=random.Random(1), templates=pool
+    )
+
+    # slot 1 ideal=2.5 -> closest is 3.0 (gap 0.5); slot 2 ideal=(5.0-3.0)/1=2.0 -> closest is 1.5 (gap 0.5)
+    assert [t.id for t in selected] == ["TPL-BIG", "TPL-MED"]
+    assert sum(t.marks for t in selected) == 4.5
 
 
 def test_marks_only_selection_fills_the_exact_section_marks():
@@ -64,14 +84,27 @@ def test_marks_only_selection_fills_the_exact_section_marks():
     assert abs(sum(t.marks for t in selected) - 2.0) < 1e-9
 
 
-def test_marks_only_selection_raises_when_remaining_marks_cannot_be_afforded():
+def test_marks_only_selection_stops_when_nothing_more_is_affordable():
     pool = [_template(id="TPL-1", marks=2.0)]
-    section = BlueprintSection(name="X", marks=1.0)
+    section = BlueprintSection(name="X", marks=1.0)  # smallest template costs more than the whole section
 
-    with pytest.raises(ValueError):
-        select_templates_for_section(
-            section, difficulty_level=1, rng=random.Random(1), templates=pool
-        )
+    selected = select_templates_for_section(
+        section, difficulty_level=1, rng=random.Random(1), templates=pool
+    )
+
+    assert selected == []
+
+
+def test_marks_only_selection_fills_as_much_as_possible_then_stops():
+    pool = [_template(id="TPL-1", marks=1.0)]
+    section = BlueprintSection(name="X", marks=2.5)  # 1.0 + 1.0 = 2.0, remaining 0.5 unaffordable
+
+    selected = select_templates_for_section(
+        section, difficulty_level=1, rng=random.Random(1), templates=pool
+    )
+
+    assert len(selected) == 2
+    assert sum(t.marks for t in selected) == 2.0
 
 
 def test_difficulty_range_filters_out_ineligible_templates():
