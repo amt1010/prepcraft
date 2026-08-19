@@ -430,21 +430,30 @@ real, disk-backed run.
       passes both `validate_paper` and `validate_blueprint_compliance`
       with zero issues
 
-**Two new gaps surfaced while scoping this** (found, not fixed — same
-"deliberately out of scope" discipline every phase has used):
-1. Nothing in the codebase builds a `Paper` (subject/class/total_marks/
-   duration_minutes/sections) from an extraction run. `ingest-paper` /
-   `clean-paper` / `extract-questions` never construct one.
-2. Nothing converts `questions/extraction.py`'s `ExtractedSubQuestion`
-   (no `id`, `expected_answer`, or `difficulty_features`) into Phase 5's
-   full `Question`. `extraction.py`'s own module docstring says this
-   conversion is "Phase 5's job" — Phase 5 built the `Question` model but
-   never actually wrote the converter.
+**Two gaps that blocked `generate-paper --source <run_id>` — closed 2026-08-19:**
+1. `app/backend/questions/paper_assembly.py` — `question_from_extracted`
+   converts one `ExtractedSubQuestion` into a full `Question`. Real,
+   documented placeholders where extraction genuinely has no data:
+   `expected_answer=""` (extraction classifies text, never determines the
+   correct answer), and a best-effort `DifficultyFeatures` that does *not*
+   override extraction's own LLM-judged `difficulty` int (the two can
+   legitimately diverge for existing-paper questions — see the file's
+   docstring). Raises `ValueError` on the unclassified fallback path
+   (`type="unknown"`, no `text_provider` configured) rather than guessing.
+2. `assemble_paper_from_extracted` builds a `Paper` + `list[Question]`
+   from a run's extracted questions plus caller-supplied `subject`/
+   `class_standard`/`duration_minutes` (spec §23: these are wizard
+   selections made before either workflow starts, never extracted data).
+   All questions land in one `"All Questions"` section — `Question` still
+   has no `section` field to group by (same gap Phase 6/8/9 each hit).
+3. Integration test: realistic `ExtractedSubQuestion`s assemble into a
+   source `Paper`, feed `generate_paper`, and the result passes
+   `validate_paper` with zero issues — closes the loop end to end.
 
-Together these mean `generate-paper --source <run_id>` (PROJECT_PLAN.md's
-demo step 4, spec's CLI list) still has nothing real to load from disk.
-Closing them is prerequisite work for that CLI command and for Phase 11's
-browser wizard, whichever comes first.
+Still open: no `generate-paper --source <run_id>` CLI command wiring these
+functions to `ArtifactStore`'s `09_questions.json` — that's now genuinely
+unblocked (both prerequisite gaps are closed) but wasn't requested as part
+of this work.
 
 ## Phase 11+ — deferred until MVP (Phases 2-10) is solid
 
