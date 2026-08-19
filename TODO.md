@@ -455,6 +455,57 @@ functions to `ArtifactStore`'s `09_questions.json` — that's now genuinely
 unblocked (both prerequisite gaps are closed) but wasn't requested as part
 of this work.
 
+## Template selection: best-effort gap-balancing — **done 2026-08-19**
+
+Found by testing the application against a real scan: `ingest-paper` ->
+`clean-paper` -> `extract-questions` on `tests/fixtures/existing_paper/
+mental_maths/page_1.jpg` produced 26 real questions totaling 14.5 marks;
+`generate_paper` raised `ValueError` because Phase 8's original
+`select_templates_for_section` required a section's `marks /
+question_count` to equal some seed template's marks *exactly*, with no
+packing solver — fine for hand-built test fixtures, but 14.5/26 doesn't
+land on 0.5, 1.0, or 2.0 (the only seed template marks values).
+
+- [x] `app/backend/blueprint/template_selection.py` — exact match is
+      still tried first (unchanged); when no template matches exactly,
+      `select_templates_for_section` now falls back to a greedy
+      gap-minimizing choice (closest available marks per remaining slot
+      for the `question_count` path; fill-until-nothing-more-affordable
+      for the marks-only path) instead of raising
+- [x] `app/backend/generation/paper_generator.py` — `generate_paper`'s
+      returned `Paper.total_marks`/`Section.marks`/`Section.question_count`
+      now reflect what was *actually* generated, not the blueprint's
+      aspirational target, so the generated paper is always internally
+      self-consistent (`validate_paper` never flags `marks_mismatch`
+      purely from a best-effort shortfall) — any real gap against the
+      *source* paper's structure shows up in `validate_blueprint_compliance`
+      instead, which is the tool built for exactly that signal
+- [x] Re-ran the real `mental_maths` extraction from this session through
+      `generate_paper`: it now **succeeds** (26 questions, no exception)
+      instead of raising. The achieved total is 52.0 marks against a 14.5
+      target, though — `validate_blueprint_compliance` correctly reports
+      `blueprint_total_marks_mismatch` and `blueprint_section_marks_mismatch`.
+      Root cause traced and confirmed, not just observed: this real
+      paper's mean extracted difficulty rounds to 3, and only 1 of the 11
+      seed templates (`TPL-ADDITION-WORD-PROBLEM`, marks=2.0) has a
+      `difficulty_range` reaching 3 — every other template tops out at 2.
+      With exactly one eligible template, gap-minimization has no other
+      choice but to use it for all 26 questions. This is the balancing
+      algorithm behaving correctly given a sparse pool (confirmed
+      separately by `test_question_count_driven_selection_minimizes_the_
+      gap_across_multiple_marks_values`, which picks the genuinely
+      closest combination when more than one marks value is available)
+      — the real, separate gap is `questions/template_registry.py`'s thin
+      difficulty-3+ coverage, not this fix.
+
+`select_templates_for_section` only raises now when the eligible template
+pool is empty after `allowed_types`/`difficulty_range` filtering — a
+different failure ("no template can serve this section at all"), not
+"couldn't hit the marks target exactly." Widening the seed template
+registry's difficulty coverage (currently 10 of 11 templates cap at
+difficulty 2) is recorded here as a real follow-up, not fixed as part of
+this change.
+
 ## Phase 11+ — deferred until MVP (Phases 2-10) is solid
 
 - [ ] Basic web UI (wizard, spec §23)
