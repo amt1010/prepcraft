@@ -86,22 +86,39 @@ def test_generated_questions_are_sequentially_numbered_and_tagged_generated():
 
 
 def test_difficulty_override_changes_which_templates_are_eligible():
-    # marks=2.0/count=1 only matches TPL-ADDITION-WORD-PROBLEM (the only seed
-    # template with marks=2.0), and that template's difficulty_range is
-    # (2, 3) — it is not reachable at the source paper's natural difficulty.
+    # marks=2.0/count=1 only exactly matches TPL-ADDITION-WORD-PROBLEM (the
+    # only seed template with marks=2.0), and that template's difficulty_range
+    # is (2, 3) — unreachable at the source paper's natural difficulty (1).
+    # Without the override, best-effort selection falls back to the closest
+    # available marks (1.0) instead of raising; with the override, the exact
+    # match succeeds.
     sections = [Section(name="Word Problems", marks=2.0, question_count=1)]
     source_paper = _source_paper(sections, total_marks=2.0)
     source_questions = [_source_question("1", difficulty=1)]  # -> derived difficulty_level=1
 
-    with pytest.raises(ValueError):
-        generate_paper(source_paper, source_questions, rng=random.Random(3))
+    _, natural_questions = generate_paper(source_paper, source_questions, rng=random.Random(3))
+    assert natural_questions[0].type != QuestionType.WORD_PROBLEM
+    assert natural_questions[0].marks == 1.0  # closest achievable, not the aspirational 2.0
 
-    generated_paper, generated_questions = generate_paper(
+    _, overridden_questions = generate_paper(
         source_paper, source_questions, difficulty_override=2, rng=random.Random(3)
     )
+    assert overridden_questions[0].type == QuestionType.WORD_PROBLEM
+    assert overridden_questions[0].marks == 2.0
 
-    assert len(generated_questions) == 1
-    assert generated_questions[0].type == QuestionType.WORD_PROBLEM
+
+def test_generated_paper_marks_reflect_what_was_actually_generated_not_the_target():
+    sections = [Section(name="Word Problems", marks=2.0, question_count=1)]
+    source_paper = _source_paper(sections, total_marks=2.0)
+    source_questions = [_source_question("1", difficulty=1)]  # best-effort picks a 1.0-mark template
+
+    generated_paper, generated_questions = generate_paper(
+        source_paper, source_questions, rng=random.Random(3)
+    )
+
+    assert generated_paper.total_marks == sum(q.marks for q in generated_questions)
+    assert generated_paper.sections[0].marks == sum(q.marks for q in generated_questions)
+    assert generated_paper.sections[0].question_count == len(generated_questions)
 
 
 def test_raises_when_source_has_no_questions():

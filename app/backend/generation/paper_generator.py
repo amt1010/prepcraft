@@ -35,8 +35,10 @@ def generate_paper(
 
     generated_paper_id = new_id("PAPER")
     generated_questions: list[Question] = []
+    generated_sections: list[Section] = []
     number = 1
     for section in blueprint.sections:
+        section_questions: list[Question] = []
         for template in templates_by_section[section.name]:
             question = generate_question(
                 template,
@@ -45,19 +47,24 @@ def generate_paper(
                 rng=rng,
                 text_provider=text_provider,
             )
+            section_questions.append(question)
             generated_questions.append(question)
             number += 1
+        generated_sections.append(
+            Section(
+                name=section.name,
+                marks=sum(q.marks for q in section_questions),
+                question_count=len(section_questions),
+            )
+        )
 
     generated_paper = Paper(
         id=generated_paper_id,
         subject=blueprint.subject,
         class_standard=blueprint.class_standard,
-        total_marks=blueprint.total_marks,
+        total_marks=sum(section.marks for section in generated_sections),
         duration_minutes=blueprint.duration_minutes,
-        sections=[
-            Section(name=s.name, marks=s.marks, question_count=s.question_count)
-            for s in blueprint.sections
-        ],
+        sections=generated_sections,
         source="generated",
         source_paper_id=blueprint.derived_from_paper_id,
         created_at=datetime.now(),
