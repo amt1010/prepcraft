@@ -1,6 +1,11 @@
+from app.backend.models.blueprint import BlueprintSection, PaperBlueprint
 from app.backend.models.paper import Paper, Section
 from app.backend.models.question import DifficultyFeatures, Question, QuestionType
-from app.backend.validation.validator import validate_paper, validate_question
+from app.backend.validation.validator import (
+    validate_blueprint_compliance,
+    validate_paper,
+    validate_question,
+)
 
 
 def _difficulty_features() -> DifficultyFeatures:
@@ -175,3 +180,88 @@ def test_multiple_choice_options_are_not_treated_as_leakage():
     issues = validate_paper(paper, questions)
 
     assert not any(issue.code == "answer_leakage" for issue in issues)
+
+
+def _blueprint(**overrides) -> PaperBlueprint:
+    fields = {
+        "id": "BP-1",
+        "subject": "Mathematics",
+        "class_standard": "III",
+        "total_marks": 2.0,
+        "duration_minutes": 50,
+        "sections": [BlueprintSection(name="A", marks=2.0, question_count=2)],
+        "difficulty_level": 1,
+    }
+    fields.update(overrides)
+    return PaperBlueprint(**fields)
+
+
+def test_matching_paper_has_no_blueprint_compliance_issues():
+    blueprint = _blueprint()
+    questions_by_section = {
+        "A": [
+            _question(question_number="1", marks=1.0),
+            _question(question_number="2", marks=1.0),
+        ]
+    }
+
+    assert validate_blueprint_compliance(blueprint, questions_by_section) == []
+
+
+def test_section_marks_not_matching_blueprint_is_flagged():
+    blueprint = _blueprint()
+    questions_by_section = {"A": [_question(question_number="1", marks=1.0)]}
+
+    issues = validate_blueprint_compliance(blueprint, questions_by_section)
+
+    assert any(issue.code == "blueprint_section_marks_mismatch" for issue in issues)
+
+
+def test_section_question_count_not_matching_blueprint_is_flagged():
+    blueprint = _blueprint()
+    questions_by_section = {"A": [_question(question_number="1", marks=2.0)]}
+
+    issues = validate_blueprint_compliance(blueprint, questions_by_section)
+
+    assert any(issue.code == "blueprint_section_count_mismatch" for issue in issues)
+
+
+def test_missing_section_in_generated_questions_is_flagged():
+    blueprint = _blueprint()
+
+    issues = validate_blueprint_compliance(blueprint, {})
+
+    assert any(issue.code == "blueprint_section_marks_mismatch" for issue in issues)
+    assert any(issue.code == "blueprint_section_count_mismatch" for issue in issues)
+
+
+def test_disallowed_question_type_is_flagged():
+    blueprint = _blueprint(
+        sections=[
+            BlueprintSection(
+                name="A", marks=1.0, question_count=1, allowed_types=[QuestionType.WORD_PROBLEM]
+            )
+        ],
+        total_marks=1.0,
+    )
+    questions_by_section = {
+        "A": [_question(question_number="1", marks=1.0, type=QuestionType.ARITHMETIC)]
+    }
+
+    issues = validate_blueprint_compliance(blueprint, questions_by_section)
+
+    assert any(issue.code == "blueprint_type_not_allowed" for issue in issues)
+
+
+def test_total_marks_not_matching_blueprint_is_flagged():
+    blueprint = _blueprint(total_marks=5.0)
+    questions_by_section = {
+        "A": [
+            _question(question_number="1", marks=1.0),
+            _question(question_number="2", marks=1.0),
+        ]
+    }
+
+    issues = validate_blueprint_compliance(blueprint, questions_by_section)
+
+    assert any(issue.code == "blueprint_total_marks_mismatch" for issue in issues)

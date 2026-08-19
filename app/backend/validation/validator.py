@@ -9,6 +9,7 @@ import re
 
 from pydantic import BaseModel
 
+from app.backend.models.blueprint import PaperBlueprint
 from app.backend.models.paper import Paper
 from app.backend.models.question import Question, QuestionType
 from app.backend.validation.answer_engine import evaluate
@@ -123,5 +124,67 @@ def validate_paper(paper: Paper, questions: list[Question]) -> list[ValidationIs
                     question_number=question.question_number,
                 )
             )
+
+    return issues
+
+
+def validate_blueprint_compliance(
+    blueprint: PaperBlueprint, questions_by_section: dict[str, list[Question]]
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+
+    total_marks = sum(
+        question.marks for questions in questions_by_section.values() for question in questions
+    )
+    if abs(total_marks - blueprint.total_marks) > 1e-6:
+        issues.append(
+            ValidationIssue(
+                code="blueprint_total_marks_mismatch",
+                message=(
+                    f"generated questions sum to {total_marks} marks, blueprint declares "
+                    f"{blueprint.total_marks}"
+                ),
+            )
+        )
+
+    for section in blueprint.sections:
+        section_questions = questions_by_section.get(section.name, [])
+        section_marks = sum(question.marks for question in section_questions)
+        if abs(section_marks - section.marks) > 1e-6:
+            issues.append(
+                ValidationIssue(
+                    code="blueprint_section_marks_mismatch",
+                    message=(
+                        f"section {section.name!r} questions sum to {section_marks} marks, "
+                        f"blueprint declares {section.marks}"
+                    ),
+                )
+            )
+        if (
+            section.question_count is not None
+            and len(section_questions) != section.question_count
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="blueprint_section_count_mismatch",
+                    message=(
+                        f"section {section.name!r} has {len(section_questions)} questions, "
+                        f"blueprint declares {section.question_count}"
+                    ),
+                )
+            )
+        if section.allowed_types is not None:
+            for question in section_questions:
+                if question.type not in section.allowed_types:
+                    issues.append(
+                        ValidationIssue(
+                            code="blueprint_type_not_allowed",
+                            message=(
+                                f"question type {question.type} is not among section "
+                                f"{section.name!r}'s allowed_types {section.allowed_types}"
+                            ),
+                            question_number=question.question_number,
+                        )
+                    )
 
     return issues
