@@ -268,15 +268,39 @@ no Roman-numeral converter utility exists in the repo yet. Both are real
 gaps, not forgotten ones; they become validator work again once Phase 7/8
 give them a caller.
 
-## Phase 7 — Question generation
+## Phase 7 — Question generation — **done 2026-08-19**
 
-- [ ] `app/backend/models/question_template.py`
-- [ ] Seed template set for MVP types (addition word problem, arithmetic,
-      Roman numeral, predecessor/successor, rounding, mental maths,
-      fill-in-blank, multiple choice, true/false)
-- [ ] `generation/variable_sampler.py`
-- [ ] `providers/text/` — `TextGenerationProvider` + Claude implementation,
-      used for `text_template` phrasing only
+- [x] `app/backend/models/question_template.py` — `QuestionTemplate`
+      (DATA_MODEL.md core entity, extended with `question_type`, `subject`,
+      `marks`, `answer_type`, `distractor_offsets` — see the phase's plan
+      doc for why each exists without a Phase 8 `PaperBlueprint` caller yet)
+- [x] `app/backend/generation/formulas.py` — Roman numeral conversion,
+      round-half-up, predecessor/successor, addition-carrying detection
+      (PROJECT_PLAN.md's deterministic list; closes the "no Roman-numeral
+      converter utility exists" gap Phase 6 noted)
+- [x] `app/backend/generation/variable_sampler.py` — `sample_variables`,
+      seedable via caller-supplied `random.Random`
+- [x] `app/backend/questions/template_registry.py` — 11 seed templates
+      covering all 9 MVP `QuestionType`s
+- [x] `app/backend/generation/question_generator.py` — `generate_question`:
+      template -> sampled variables -> code-computed answer -> assembled
+      `Question`, with optional LLM rephrasing of already-computed text
+      (`providers/text_generation.py`, built in Phase 4, reused as-is — no
+      new provider file needed)
+- [x] Integration test: one candidate per seed template passes Phase 6's
+      `validate_paper` with zero issues — closes Phase 6's TODO.md note
+      ("they become validator work again once Phase 7/8 give them a
+      caller")
+
+Deliberately out of scope this phase (no caller exists yet to need them):
+no CLI command — `PaperBlueprint`-driven template *selection* (PIPELINE.md:
+"pick QuestionTemplates matching blueprint's topics/types/difficulty_range")
+is Phase 8's job, and there is no assembled multi-question `Paper` to render
+until a blueprint picks which templates and how many of each to use. No
+`generation_max_regenerate_attempts`-driven regenerate-on-failure loop
+either (`config.yaml` already has the setting from Phase 1) — that loop
+needs Phase 8's template-selection step to have something to regenerate
+*from* when a candidate fails validation.
 
 ## Phase 8 — Paper blueprint
 
