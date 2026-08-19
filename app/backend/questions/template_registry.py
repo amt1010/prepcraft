@@ -1,0 +1,195 @@
+"""Seed QuestionTemplate set for MVP question types (TODO.md Phase 7: "Seed
+template set for MVP types"). Every `operation` string used here is
+dispatched in generation/question_generator.py's `_resolve` — adding a
+template with a new operation means adding a branch there too, since answer
+computation is never left to the LLM (spec §14).
+
+`answer_expression` is only fed to validation/answer_engine.py's restricted
+evaluator for templates whose operation falls through to the generic
+arithmetic path in `_resolve` (addition_word_problem, arithmetic_addition,
+mental_maths_addition, addition_fill_blank, multiple_choice_addition,
+true_false_addition — all "a + b"). For the five templates dispatched to a
+generation/formulas.py function instead (predecessor, successor, both
+rounding templates, roman numeral conversion), `answer_expression` is
+descriptive documentation only, not something ever passed to `evaluate()`."""
+
+from app.backend.models.question import QuestionType
+from app.backend.models.question_template import QuestionTemplate
+
+TEMPLATES: list[QuestionTemplate] = [
+    QuestionTemplate(
+        id="TPL-ADDITION-WORD-PROBLEM",
+        template_type="addition_word_problem",
+        question_type=QuestionType.WORD_PROBLEM,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=2.0,
+        difficulty_range=(2, 3),
+        variables={"a": "3_digit_number", "b": "3_digit_number"},
+        operation="addition",
+        answer_expression="a + b",
+        text_template=(
+            "A shopkeeper sold {a} items on Monday and {b} items on Tuesday. "
+            "How many items did the shopkeeper sell altogether?"
+        ),
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-ARITHMETIC-ADD",
+        template_type="arithmetic_addition",
+        question_type=QuestionType.ARITHMETIC,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=1.0,
+        difficulty_range=(1, 2),
+        variables={"a": "3_digit_number", "b": "3_digit_number"},
+        operation="addition",
+        answer_expression="a + b",
+        text_template="{a} + {b} = ?",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-ROMAN-NUMERAL",
+        template_type="roman_numeral_conversion",
+        question_type=QuestionType.ROMAN_NUMERAL,
+        subject="Mathematics",
+        grade="III",
+        topic="Roman numerals",
+        marks=1.0,
+        difficulty_range=(1, 1),
+        variables={"n": "small_number_1_50"},
+        operation="roman_numeral_conversion",
+        answer_expression="to_roman(n)",
+        text_template="Write the Roman numeral for {n}.",
+        answer_type="text",
+    ),
+    QuestionTemplate(
+        id="TPL-PREDECESSOR",
+        template_type="predecessor",
+        question_type=QuestionType.PREDECESSOR_SUCCESSOR,
+        subject="Mathematics",
+        grade="III",
+        topic="Number sense",
+        marks=1.0,
+        difficulty_range=(1, 1),
+        variables={"n": "2_digit_number"},
+        operation="predecessor",
+        answer_expression="n - 1",
+        text_template="What is the predecessor of {n}?",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-SUCCESSOR",
+        template_type="successor",
+        question_type=QuestionType.PREDECESSOR_SUCCESSOR,
+        subject="Mathematics",
+        grade="III",
+        topic="Number sense",
+        marks=1.0,
+        difficulty_range=(1, 1),
+        variables={"n": "2_digit_number"},
+        operation="successor",
+        answer_expression="n + 1",
+        text_template="What is the successor of {n}?",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-ROUND-NEAREST-10",
+        template_type="round_nearest_10",
+        question_type=QuestionType.ROUNDING,
+        subject="Mathematics",
+        grade="III",
+        topic="Rounding",
+        marks=1.0,
+        difficulty_range=(1, 1),
+        variables={"n": "3_digit_number"},
+        operation="round_nearest_10",
+        answer_expression="round(n, 10)",
+        text_template="Round {n} to the nearest 10.",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-ROUND-NEAREST-100",
+        template_type="round_nearest_100",
+        question_type=QuestionType.ROUNDING,
+        subject="Mathematics",
+        grade="III",
+        topic="Rounding",
+        marks=1.0,
+        difficulty_range=(1, 1),
+        variables={"n": "3_digit_number"},
+        operation="round_nearest_100",
+        answer_expression="round(n, 100)",
+        text_template="Round {n} to the nearest 100.",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-MENTAL-MATHS-ADD",
+        template_type="mental_maths_addition",
+        question_type=QuestionType.MENTAL_MATHS,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=0.5,
+        difficulty_range=(1, 2),
+        variables={"a": "1_digit_number", "b": "1_digit_number"},
+        operation="addition",
+        answer_expression="a + b",
+        text_template="{a} + {b} = ___",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-FILL-BLANK-ADD",
+        template_type="addition_fill_blank",
+        question_type=QuestionType.FILL_BLANK,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=1.0,
+        difficulty_range=(1, 2),
+        variables={"a": "2_digit_number", "b": "2_digit_number"},
+        operation="addition_fill_blank",
+        answer_expression="a + b",
+        text_template="{a} + ___ = {c}",
+        answer_type="numeric",
+    ),
+    QuestionTemplate(
+        id="TPL-MULTIPLE-CHOICE-ADD",
+        template_type="multiple_choice_addition",
+        question_type=QuestionType.MULTIPLE_CHOICE,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=1.0,
+        difficulty_range=(1, 2),
+        variables={"a": "2_digit_number", "b": "2_digit_number"},
+        operation="addition",
+        answer_expression="a + b",
+        text_template="What is {a} + {b}?",
+        answer_type="choice",
+        distractor_offsets=[-10, -1, 10],
+    ),
+    QuestionTemplate(
+        id="TPL-TRUE-FALSE-ADD",
+        template_type="true_false_addition",
+        question_type=QuestionType.TRUE_FALSE,
+        subject="Mathematics",
+        grade="III",
+        topic="Addition",
+        marks=1.0,
+        difficulty_range=(1, 2),
+        variables={"a": "2_digit_number", "b": "2_digit_number"},
+        operation="true_false_addition",
+        answer_expression="a + b",
+        text_template="{a} + {b} = {c}",
+        answer_type="boolean",
+    ),
+]
+
+
+def get_templates(question_type: QuestionType | None = None) -> list[QuestionTemplate]:
+    if question_type is None:
+        return list(TEMPLATES)
+    return [t for t in TEMPLATES if t.question_type == question_type]
