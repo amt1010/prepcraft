@@ -5,6 +5,8 @@ description = "Ingest school question papers and textbook content, clean handwri
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "python-multipart>=0.0.12",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "opencv-python-headless>=4.10",
