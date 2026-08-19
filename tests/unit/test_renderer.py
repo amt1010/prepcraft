@@ -3,9 +3,10 @@ from pathlib import Path
 
 import pytest
 
+from app.backend.models.answer_key import AnswerKey, AnswerKeyEntry
 from app.backend.models.paper import Paper, Section
 from app.backend.models.question import DifficultyFeatures, Question, QuestionType
-from app.backend.rendering.renderer import render_question_paper
+from app.backend.rendering.renderer import render_answer_sheet, render_question_paper
 
 
 def _difficulty_features() -> DifficultyFeatures:
@@ -78,3 +79,37 @@ def test_letter_page_size_also_renders(tmp_path: Path):
     render_question_paper(_paper(), [_question()], output_path, page_size="LETTER")
 
     assert output_path.read_bytes().startswith(b"%PDF-")
+
+
+def _answer_key() -> AnswerKey:
+    return AnswerKey(
+        id="ANSKEY-1",
+        paper_id="P-1",
+        entries=[
+            AnswerKeyEntry(question_id="Q-1", question_number="1", answer="72", marks=1.0)
+        ],
+    )
+
+
+def test_renders_a_valid_answer_sheet_pdf(tmp_path: Path):
+    output_path = tmp_path / "answer_sheet.pdf"
+
+    result = render_answer_sheet(_paper(), _answer_key(), output_path)
+
+    assert result == output_path
+    content = output_path.read_bytes()
+    assert content.startswith(b"%PDF-")
+    assert b"%%EOF" in content[-64:]
+
+
+def test_answer_sheet_creates_missing_parent_directories(tmp_path: Path):
+    output_path = tmp_path / "nested" / "dir" / "answer_sheet.pdf"
+
+    render_answer_sheet(_paper(), _answer_key(), output_path)
+
+    assert output_path.exists()
+
+
+def test_answer_sheet_unknown_page_size_raises():
+    with pytest.raises(ValueError):
+        render_answer_sheet(_paper(), _answer_key(), Path("unused.pdf"), page_size="A3")
