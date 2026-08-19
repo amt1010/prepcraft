@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from app.backend.generation.paper_generator import generate_paper
+from app.backend.generation.paper_generator import generate_paper, regenerate_paper
 from app.backend.models.paper import Paper, Section
 from app.backend.models.question import DifficultyFeatures, Question, QuestionType
 
@@ -127,3 +127,89 @@ def test_raises_when_source_has_no_questions():
 
     with pytest.raises(ValueError):
         generate_paper(source_paper, [], rng=random.Random(1))
+
+
+def test_regenerated_paper_preserves_total_marks_and_sections_from_source():
+    # _source_question's fixture builder always uses marks=1.0; build these
+    # directly since this test needs specific, differing marks values.
+    source_questions = [
+        Question(
+            id="Q-1",
+            paper_id="PAPER-SOURCE",
+            question_number="1",
+            type=QuestionType.ARITHMETIC,
+            text="375 + 125 = ?",
+            marks=0.5,
+            topic="Addition",
+            difficulty=3,
+            difficulty_features=_difficulty_features(),
+            expected_answer="500",
+            answer_type="numeric",
+            source="existing_paper",
+        ),
+        Question(
+            id="Q-2",
+            paper_id="PAPER-SOURCE",
+            question_number="2",
+            type=QuestionType.ROMAN_NUMERAL,
+            text="Write the roman number for 27.",
+            marks=1.5,
+            topic="Roman numerals",
+            difficulty=2,
+            difficulty_features=_difficulty_features(),
+            expected_answer="XXVII",
+            answer_type="text",
+            source="existing_paper",
+        ),
+    ]
+    source_paper = _source_paper(
+        [Section(name="Practice", marks=2.0, question_count=2)], total_marks=2.0
+    )
+
+    generated_paper, generated_questions = regenerate_paper(
+        source_paper, source_questions, rng=random.Random(1)
+    )
+
+    assert generated_paper.total_marks == 2.0
+    assert generated_paper.sections[0].marks == 2.0
+    assert generated_paper.sections[0].question_count == 2
+    assert generated_paper.source == "generated"
+    assert generated_paper.source_paper_id == source_paper.id
+
+
+def test_each_regenerated_question_keeps_its_sources_number_and_marks():
+    source_questions = [
+        Question(
+            id="Q-1",
+            paper_id="PAPER-SOURCE",
+            question_number="1",
+            type=QuestionType.ARITHMETIC,
+            text="375 + 125 = ?",
+            marks=0.5,
+            topic="Addition",
+            difficulty=3,
+            difficulty_features=_difficulty_features(),
+            expected_answer="500",
+            answer_type="numeric",
+            source="existing_paper",
+        ),
+    ]
+    source_paper = _source_paper(
+        [Section(name="A", marks=0.5, question_count=1)], total_marks=0.5
+    )
+
+    generated_paper, generated_questions = regenerate_paper(
+        source_paper, source_questions, rng=random.Random(2)
+    )
+
+    assert generated_questions[0].question_number == "1"
+    assert generated_questions[0].marks == 0.5
+    assert generated_questions[0].type == QuestionType.ARITHMETIC
+    assert generated_questions[0].text != "375 + 125 = ?"  # new values, not a copy
+
+
+def test_regenerate_paper_raises_when_source_has_no_questions():
+    source_paper = _source_paper([Section(name="A", marks=1.0)], total_marks=1.0)
+
+    with pytest.raises(ValueError):
+        regenerate_paper(source_paper, [], rng=random.Random(1))
