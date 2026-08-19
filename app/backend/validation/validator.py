@@ -9,6 +9,7 @@ import re
 
 from pydantic import BaseModel
 
+from app.backend.models.paper import Paper
 from app.backend.models.question import Question, QuestionType
 from app.backend.validation.answer_engine import evaluate
 
@@ -75,5 +76,52 @@ def validate_question(question: Question) -> list[ValidationIssue]:
                             question_number=question.question_number,
                         )
                     )
+
+    return issues
+
+
+def validate_paper(paper: Paper, questions: list[Question]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+
+    for question in questions:
+        issues.extend(validate_question(question))
+
+    total_marks = sum(question.marks for question in questions)
+    if abs(total_marks - paper.total_marks) > 1e-6:
+        issues.append(
+            ValidationIssue(
+                code="marks_mismatch",
+                message=(
+                    f"questions sum to {total_marks} marks, paper declares "
+                    f"{paper.total_marks}"
+                ),
+            )
+        )
+
+    seen_by_text: dict[str, str] = {}
+    for question in questions:
+        normalized = " ".join(question.text.split()).lower()
+        if normalized in seen_by_text:
+            issues.append(
+                ValidationIssue(
+                    code="duplicate_question",
+                    message=f"question {question.question_number} duplicates {seen_by_text[normalized]}",
+                    question_number=question.question_number,
+                )
+            )
+        else:
+            seen_by_text[normalized] = question.question_number
+
+    for question in questions:
+        if question.type == QuestionType.MULTIPLE_CHOICE or not question.expected_answer.strip():
+            continue
+        if re.search(rf"\b{re.escape(question.expected_answer)}\b", question.text, re.IGNORECASE):
+            issues.append(
+                ValidationIssue(
+                    code="answer_leakage",
+                    message="expected_answer appears verbatim in question text",
+                    question_number=question.question_number,
+                )
+            )
 
     return issues
