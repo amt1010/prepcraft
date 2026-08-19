@@ -249,13 +249,24 @@ looser-than-exact-match grading rule — not yet decided.
 - [x] `DifficultyFeatures.score()` implementation + unit tests covering the
       spec §16 easy/medium/harder examples
 
-## Phase 6 — Validation
+## Phase 6 — Validation — **done 2026-08-19**
 
-- [ ] `validation/answer_engine.py` — restricted expression evaluator
-- [ ] `validation/validator.py` — recompute, blueprint compliance, dedup,
-      options-contain-answer, no leakage
-- [ ] Unit test: deliberately wrong answer_expression fixture must fail
-      validation (spec §21's 47+25=73 example, literally)
+- [x] `app/backend/validation/answer_engine.py` — restricted (`ast`-based)
+      arithmetic expression evaluator, never `eval()` on a raw string
+      (DATA_MODEL.md)
+- [x] `app/backend/validation/validator.py` — `validate_question` (missing
+      answer, multiple-choice options, arithmetic recomputation) and
+      `validate_paper` (total marks, duplicate questions, answer leakage)
+- [x] Unit test: spec §21's 47+25=73 example, literally — `expected_answer`
+      recomputes wrong and validation fails with `arithmetic_mismatch`
+
+Deliberately out of scope this phase (no caller exists yet to need them):
+no `validate-paper` CLI command — nothing produces a full generated `Paper`
++ `Question` set until Phase 7/8 — and no Roman-numeral or blueprint
+section-count recomputation, since `Question` has no `section` field and
+no Roman-numeral converter utility exists in the repo yet. Both are real
+gaps, not forgotten ones; they become validator work again once Phase 7/8
+give them a caller.
 
 ## Phase 7 — Question generation
 
