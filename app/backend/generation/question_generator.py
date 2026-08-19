@@ -24,6 +24,7 @@ from app.backend.generation.variable_sampler import sample_variables
 from app.backend.models.question import DifficultyFeatures, Question, QuestionType
 from app.backend.models.question_template import QuestionTemplate
 from app.backend.providers.text_generation import TextGenerationProvider
+from app.backend.questions.template_registry import get_templates
 from app.backend.validation.answer_engine import evaluate
 
 _PHRASING_PROMPT = """Rewrite this Class III Mathematics question so it reads naturally, \
@@ -133,3 +134,25 @@ def generate_question(
         source="generated",
         template_id=template.id,
     )
+
+
+def regenerate_question(
+    source_question: Question,
+    paper_id: str,
+    rng: random.Random,
+    text_provider: TextGenerationProvider | None = None,
+    templates: list[QuestionTemplate] | None = None,
+) -> Question:
+    pool = templates if templates is not None else get_templates(source_question.type)
+    if not pool:
+        raise ValueError(f"no template registered for question type {source_question.type}")
+    template = rng.choice(pool)
+
+    question = generate_question(
+        template,
+        paper_id=paper_id,
+        question_number=source_question.question_number,
+        rng=rng,
+        text_provider=text_provider,
+    )
+    return question.model_copy(update={"marks": source_question.marks})

@@ -1,10 +1,11 @@
 import random
 import re
 
+import pytest
 from pydantic import BaseModel
 
-from app.backend.generation.question_generator import generate_question
-from app.backend.models.question import QuestionType
+from app.backend.generation.question_generator import generate_question, regenerate_question
+from app.backend.models.question import DifficultyFeatures, Question, QuestionType
 from app.backend.questions.template_registry import get_templates
 
 
@@ -137,3 +138,78 @@ def test_without_a_text_provider_uses_the_rendered_template_text():
     question = generate_question(template, paper_id="P-1", question_number="1", rng=rng)
 
     assert "shopkeeper" in question.text
+
+
+def _difficulty_features() -> DifficultyFeatures:
+    return DifficultyFeatures(
+        operation_count=1,
+        requires_carrying=False,
+        step_count=1,
+        vocabulary_level="basic",
+        reasoning_required=False,
+    )
+
+
+def _source_question(**overrides) -> Question:
+    fields = {
+        "id": "Q-SOURCE",
+        "paper_id": "PAPER-SOURCE",
+        "question_number": "1",
+        "type": QuestionType.ARITHMETIC,
+        "text": "375 + 125 = ?",
+        "marks": 0.5,
+        "topic": "Addition",
+        "difficulty": 3,
+        "difficulty_features": _difficulty_features(),
+        "expected_answer": "500",
+        "answer_type": "numeric",
+        "source": "existing_paper",
+    }
+    fields.update(overrides)
+    return Question(**fields)
+
+
+def test_regenerated_question_keeps_the_sources_number_and_marks():
+    source = _source_question(question_number="1", marks=0.5)
+
+    regenerated = regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1))
+
+    assert regenerated.question_number == "1"
+    assert regenerated.marks == 0.5
+
+
+def test_regenerated_question_matches_the_sources_type():
+    source = _source_question(
+        type=QuestionType.ROMAN_NUMERAL, text="Write the roman number for 27."
+    )
+
+    regenerated = regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1))
+
+    assert regenerated.type == QuestionType.ROMAN_NUMERAL
+
+
+def test_regenerated_question_marks_override_the_templates_own_marks():
+    # TPL-ARITHMETIC-ADD declares marks=1.0; the source question's marks
+    # (0.5) must win, matching the "375+125=? at 0.5 marks -> new values,
+    # still 0.5 marks" example this plan is named after.
+    source = _source_question(type=QuestionType.ARITHMETIC, marks=0.5)
+
+    regenerated = regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1))
+
+    assert regenerated.marks == 0.5
+
+
+def test_regenerated_question_belongs_to_the_new_paper_id():
+    source = _source_question()
+
+    regenerated = regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1))
+
+    assert regenerated.paper_id == "PAPER-NEW"
+    assert regenerated.source == "generated"
+
+
+def test_raises_when_no_template_matches_the_sources_type():
+    source = _source_question(type=QuestionType.ARITHMETIC)
+
+    with pytest.raises(ValueError):
+        regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1), templates=[])
