@@ -213,3 +213,15 @@ def test_raises_when_no_template_matches_the_sources_type():
 
     with pytest.raises(ValueError):
         regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1), templates=[])
+
+
+def test_regenerated_multiplication_uses_a_multiplication_template():
+    source = _source_question(
+        text="24 x 3 = ?", topic="Multiplication", marks=2.0
+    )
+
+    regenerated = regenerate_question(source, paper_id="PAPER-NEW", rng=random.Random(1))
+
+    assert regenerated.template_id == "TPL-MULTIPLICATION-ARITHMETIC"
+    assert " x " in regenerated.text
+    assert regenerated.expected_answer.isdigit()

@@ -6,6 +6,7 @@ plan's header for the judgment calls this file has to make about data
 extraction genuinely doesn't produce (expected_answer, difficulty_features,
 section grouping, paper-level metadata)."""
 
+import re
 from datetime import datetime
 
 from app.backend.core.ids import new_id
@@ -19,6 +20,14 @@ _ANSWER_TYPE_BY_QUESTION_TYPE = {
     QuestionType.ROMAN_NUMERAL: "text",
 }
 _DEFAULT_ANSWER_TYPE = "numeric"
+_QUESTION_NUMBER_PATTERN = re.compile(r"(\d+)([a-z]*)", re.IGNORECASE)
+
+
+def _question_number_key(question_number: str) -> tuple[int, str]:
+    match = _QUESTION_NUMBER_PATTERN.fullmatch(question_number.strip())
+    if match is None:
+        return (10**9, question_number)
+    return (int(match.group(1)), match.group(2).lower())
 
 
 def _placeholder_difficulty_features(question_type: QuestionType) -> DifficultyFeatures:
@@ -70,7 +79,22 @@ def assemble_paper_from_extracted(
     extracted_questions: list[ExtractedSubQuestion],
 ) -> tuple[Paper, list[Question]]:
     paper_id = new_id("PAPER")
-    questions = [question_from_extracted(extracted, paper_id) for extracted in extracted_questions]
+    has_sections = any(item.section_name for item in extracted_questions)
+    if has_sections:
+        ordered_extracted = list(extracted_questions)
+    else:
+        ordered_extracted = sorted(
+            extracted_questions, key=lambda item: _question_number_key(item.question_number)
+        )
+    questions = [question_from_extracted(extracted, paper_id) for extracted in ordered_extracted]
+    section_groups: list[tuple[str, list[Question]]] = []
+    for extracted, question in zip(ordered_extracted, questions, strict=True):
+        section_name = extracted.section_name or "All Questions"
+        if not section_groups or section_groups[-1][0] != section_name:
+            section_groups.append((section_name, []))
+        section_groups[-1][1].append(question)
+    if not section_groups:
+        section_groups.append(("All Questions", []))
     total_marks = sum(question.marks for question in questions)
 
     paper = Paper(
@@ -80,7 +104,12 @@ def assemble_paper_from_extracted(
         total_marks=total_marks,
         duration_minutes=duration_minutes,
         sections=[
-            Section(name="All Questions", marks=total_marks, question_count=len(questions))
+            Section(
+                name=name,
+                marks=sum(question.marks for question in section_questions),
+                question_count=len(section_questions),
+            )
+            for name, section_questions in section_groups
         ],
         source="existing_paper",
         created_at=datetime.now(),

@@ -84,8 +84,13 @@ def regenerate_paper(
     generated_paper_id = new_id("PAPER")
 
     generated_questions = [
-        regenerate_question(question, generated_paper_id, rng, text_provider=text_provider)
-        for question in source_questions
+        regenerate_question(
+            question,
+            generated_paper_id,
+            rng,
+            text_provider=text_provider,
+        ).model_copy(update={"question_number": str(index)})
+        for index, question in enumerate(source_questions, start=1)
     ]
 
     generated_paper = Paper(

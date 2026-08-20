@@ -168,3 +168,22 @@ def test_propagates_the_converters_error_for_an_unclassified_question():
             duration_minutes=50,
             extracted_questions=[_extracted(marks=None, topic=None, difficulty=None)],
         )
+
+
+def test_preserves_sections_and_natural_question_order():
+    paper, questions = assemble_paper_from_extracted(
+        subject="Mathematics",
+        class_standard="III",
+        duration_minutes=50,
+        extracted_questions=[
+            _extracted(question_number="1a", section_name="Section A"),
+            _extracted(question_number="2a", section_name="Section B"),
+            _extracted(question_number="3a", section_name="Section B"),
+        ],
+    )
+
+    assert [question.question_number for question in questions] == ["1a", "2a", "3a"]
+    assert [(section.name, section.question_count) for section in paper.sections] == [
+        ("Section A", 1),
+        ("Section B", 2),
+    ]

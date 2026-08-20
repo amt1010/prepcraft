@@ -19,6 +19,7 @@ _META_STYLE = ParagraphStyle("PaperMeta", parent=_STYLES["Normal"], alignment=1)
 _QUESTION_STYLE = ParagraphStyle(
     "Question", parent=_STYLES["Normal"], spaceBefore=10, spaceAfter=4
 )
+_SECTION_STYLE = ParagraphStyle("Section", parent=_STYLES["Heading2"], spaceBefore=14)
 _OPTION_STYLE = ParagraphStyle("Option", parent=_STYLES["Normal"], leftIndent=18)
 _OPTION_LABELS = "abcdefgh"
 
@@ -45,6 +46,20 @@ def build_flowables(paper: Paper, questions: list[Question]) -> list[Flowable]:
         ),
         Spacer(1, 0.5 * cm),
     ]
-    for question in questions:
-        flowables.extend(_question_flowables(question))
+    section_question_total = sum(section.question_count or 0 for section in paper.sections)
+    if section_question_total != len(questions):
+        for question in questions:
+            flowables.extend(_question_flowables(question))
+        return flowables
+
+    question_index = 0
+    for section in paper.sections:
+        if section.name != "All Questions":
+            flowables.append(Paragraph(section.name, _SECTION_STYLE))
+        section_questions = questions[
+            question_index : question_index + (section.question_count or 0)
+        ]
+        question_index += len(section_questions)
+        for question in section_questions:
+            flowables.extend(_question_flowables(question))
     return flowables

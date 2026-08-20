@@ -8,6 +8,7 @@ import random
 from pathlib import Path
 
 import cv2
+import pymupdf
 
 from app.backend.answer_key.builder import build_answer_key
 from app.backend.core.config import load_config
@@ -15,7 +16,7 @@ from app.backend.core.secrets import Secrets
 from app.backend.generation.paper_generator import regenerate_paper
 from app.backend.ingestion.image_loader import load_pages
 from app.backend.ingestion.page_detector import detect_page
-from app.backend.ocr.layout_analysis import group_by_question_number
+from app.backend.ocr.layout_analysis import group_by_question_number, group_text_by_question_number
 from app.backend.ocr.orchestrator import extract_text_with_fallback
 from app.backend.preprocessing.annotation_detector import detect_annotations
 from app.backend.preprocessing.annotation_remover import remove_annotations
@@ -65,20 +66,26 @@ def run_full_pipeline(
     else:
         vision_provider = ocr_fallback = text_provider = None
 
-    pages = load_pages(image_path)
-    detection = detect_page(pages[0])
-    corrected = correct_perspective(detection.image)
-    enhanced = enhance_image(corrected)
-    annotation_result = detect_annotations(enhanced, vision_provider=vision_provider)
-    cleaned = remove_annotations(enhanced, annotation_result.mask)
+    if image_path.suffix.lower() == ".pdf":
+        pdf_text = "\n".join(page.get_text() for page in pymupdf.open(image_path))
+        groups = group_text_by_question_number(pdf_text)
+    else:
+        pages = load_pages(image_path)
+        groups = []
+        for page in pages:
+            detection = detect_page(page)
+            corrected = correct_perspective(detection.image)
+            enhanced = enhance_image(corrected)
+            annotation_result = detect_annotations(enhanced, vision_provider=vision_provider)
+            cleaned = remove_annotations(enhanced, annotation_result.mask)
 
-    success, buffer = cv2.imencode(".png", cleaned)
-    if not success:
-        raise ValueError("failed to encode cleaned page as PNG")
-    ocr_result = extract_text_with_fallback(
-        buffer.tobytes(), TesseractOCRProvider(), ocr_fallback
-    )
-    groups = group_by_question_number(ocr_result)
+            success, buffer = cv2.imencode(".png", cleaned)
+            if not success:
+                raise ValueError("failed to encode cleaned page as PNG")
+            ocr_result = extract_text_with_fallback(
+                buffer.tobytes(), TesseractOCRProvider(), ocr_fallback
+            )
+            groups.extend(group_by_question_number(ocr_result))
     extracted = extract_questions(groups, text_provider=text_provider)
 
     source_paper, source_questions = assemble_paper_from_extracted(

@@ -8,6 +8,7 @@ through the pipeline once and get real PDFs back," per the user's explicit
 choice of this over a CLI-only or CLI-command approach."""
 
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
@@ -20,13 +21,18 @@ _UPLOAD_DIR = Path("data/uploads")
 _GENERATED_DIR = Path("data/generated")
 
 _FORM_HTML = """<!doctype html>
-<html><head><title>AI Practice Paper Generator</title></head>
+<html><head><title>AI Practice Paper Generator</title>
+<style>
+    progress { width: 100%; height: 20px; }
+    #progress-panel { display: none; margin-top: 20px; }
+</style>
+</head>
 <body style="font-family: sans-serif; max-width: 640px; margin: 40px auto;">
 <h1>AI Practice Paper Generator — manual test</h1>
 <p>Upload a scanned exam page (JPG/PNG/PDF, one page). Runs the full
 Workflow A pipeline: ingest, clean, OCR, extract, regenerate 1:1
 (same type, same marks, new values), render.</p>
-<form action="/generate" method="post" enctype="multipart/form-data">
+<form id="generate-form" action="/generate" method="post" enctype="multipart/form-data">
   <p><label>Paper image/PDF: <input type="file" name="file" required></label></p>
   <p><label>Subject: <input type="text" name="subject" value="Mathematics"></label></p>
   <p><label>Class: <input type="text" name="class_standard" value="III"></label></p>
@@ -34,6 +40,53 @@ Workflow A pipeline: ingest, clean, OCR, extract, regenerate 1:1
     <input type="number" name="duration_minutes" value="50"></label></p>
   <p><button type="submit">Generate</button></p>
 </form>
+<div id="progress-panel">
+    <progress id="progress" value="0" max="100"></progress>
+    <p id="progress-label">Uploading paper...</p>
+</div>
+<script>
+    const form = document.getElementById("generate-form");
+    const panel = document.getElementById("progress-panel");
+    const progress = document.getElementById("progress");
+    const label = document.getElementById("progress-label");
+    const stages = [
+        [15, "Uploading paper..."], [35, "Cleaning scanned pages..."],
+        [55, "Reading and classifying questions..."],
+        [75, "Generating mathematically checked questions..."],
+        [90, "Rendering PDFs..."]
+    ];
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        panel.style.display = "block";
+        form.querySelector("button").disabled = true;
+        let stage = 0;
+        const timer = setInterval(() => {
+            if (stage < stages.length) {
+                progress.value = stages[stage][0];
+                label.textContent = stages[stage][1];
+                stage += 1;
+            }
+        }, 900);
+        try {
+            const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
+            const body = await response.text();
+            clearInterval(timer);
+            if (!response.ok) {
+                progress.value = 100;
+                label.textContent = "Generation failed: " + body;
+                form.querySelector("button").disabled = false;
+                return;
+            }
+            progress.value = 100;
+            label.textContent = "Complete";
+            document.open(); document.write(body); document.close();
+        } catch (error) {
+            clearInterval(timer);
+            label.textContent = "Generation failed: " + error;
+            form.querySelector("button").disabled = false;
+        }
+    });
+</script>
 </body></html>
 """
 
@@ -51,16 +104,20 @@ async def generate(
     duration_minutes: int = Form(50),
 ) -> str:
     _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    upload_path = _UPLOAD_DIR / Path(file.filename).name
+    original_name = Path(file.filename or "upload").name
+    upload_path = _UPLOAD_DIR / f"{uuid4().hex}_{original_name}"
     upload_path.write_bytes(await file.read())
 
-    question_paper_path, answer_sheet_path = run_full_pipeline(
-        upload_path,
-        subject=subject,
-        class_standard=class_standard,
-        duration_minutes=duration_minutes,
-        output_root=_GENERATED_DIR,
-    )
+    try:
+        question_paper_path, answer_sheet_path = run_full_pipeline(
+            upload_path,
+            subject=subject,
+            class_standard=class_standard,
+            duration_minutes=duration_minutes,
+            output_root=_GENERATED_DIR,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     paper_id = question_paper_path.parent.name
     return f"""<!doctype html>

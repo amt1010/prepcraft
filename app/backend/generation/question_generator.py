@@ -56,6 +56,9 @@ def _resolve(
     if op == "addition_fill_blank":
         total = int(evaluate(template.answer_expression, variables))
         return {**variables, "c": total}, str(variables["b"])
+    if op == "multiplication_fill_blank":
+        total = int(evaluate(template.answer_expression, variables))
+        return {**variables, "c": total}, str(variables["b"])
     if op == "true_false_addition":
         correct = int(evaluate(template.answer_expression, variables))
         is_true = rng.random() < 0.5
@@ -144,6 +147,15 @@ def regenerate_question(
     templates: list[QuestionTemplate] | None = None,
 ) -> Question:
     pool = templates if templates is not None else get_templates(source_question.type)
+    is_multiplication = (
+        "multiplication" in source_question.topic.lower()
+        or "multiply" in source_question.text.lower()
+        or "×" in source_question.text
+    )
+    if is_multiplication and templates is None:
+        multiplication_pool = [template for template in pool if template.topic == "Multiplication"]
+        if multiplication_pool:
+            pool = multiplication_pool
     if not pool:
         raise ValueError(f"no template registered for question type {source_question.type}")
     template = rng.choice(pool)

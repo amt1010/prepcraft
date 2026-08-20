@@ -1,4 +1,8 @@
-from app.backend.ocr.layout_analysis import LayoutGroup, group_by_question_number
+from app.backend.ocr.layout_analysis import (
+    LayoutGroup,
+    group_by_question_number,
+    group_text_by_question_number,
+)
 from app.backend.providers.ocr import OCRResult, OCRWord
 
 
@@ -54,3 +58,49 @@ def test_does_not_treat_a_lettered_sub_part_marker_as_a_new_top_level_group():
     assert len(groups) == 1
     assert groups[0].question_number == "1"
     assert groups[0].text == "a. 405 b. 450"
+
+
+def test_groups_text_layer_questions_by_all_sections_in_source_order():
+    text = """Worksheet
+A. Fill in the blanks. (2 x 1 = 2)
+1. 4 x 6 = ___
+2. 7 x 8 = ___
+B. Multiply. (1 x 2 = 2)
+1. 24 x 3 = ___
+C. Column method
+1. 125 x 3 = ___
+D. Word Problems
+1. A school has 6 classrooms.
+E. Think and Answer
+1. Find the missing number.
+"""
+
+    groups = group_text_by_question_number(text)
+
+    assert len(groups) == 6
+    assert [group.section_name for group in groups] == [
+        "A. Fill in the blanks. (2 x 1 = 2)",
+        "A. Fill in the blanks. (2 x 1 = 2)",
+        "B. Multiply. (1 x 2 = 2)",
+        "C. Column method",
+        "D. Word Problems",
+        "E. Think and Answer",
+    ]
+
+
+def test_groups_the_real_multiplication_worksheet_into_all_53_questions():
+    import pymupdf
+
+    path = "input_data/Class_3_Multiplication_Combined_Worksheet.pdf"
+    text = "\n".join(page.get_text() for page in pymupdf.open(path))
+
+    groups = group_text_by_question_number(text)
+
+    assert len(groups) == 53
+    assert {group.section_name for group in groups} == {
+        "A. Fill in the blanks. (25 × 1 = 25)",
+        "B. Multiply. (5 × 2 = 10)",
+        "C. Multiply using the column method. (5 × 2 = 10)",
+        "D. Word Problems",
+        "E. Think and Answer",
+    }
